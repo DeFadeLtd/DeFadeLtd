@@ -1,0 +1,143 @@
+{
+ "stamp": "25 Oct 2026",
+ "survival": {
+  "totals": {
+   "tracked": 91907,
+   "flagged": 82131,
+   "calledIt": 63969
+  },
+  "current": {
+   "survival_1h": 99.3,
+   "survival_6h": 90.2,
+   "survival_24h": 61.2,
+   "survival_7d": 28.3,
+   "survival_30d": 16.4,
+   "median_lifespan_hours": 31.1
+  }
+ },
+ "heatmap": {
+  "days": 30,
+  "hourOfDay": [
+   {
+    "activity": 98,
+    "highRisk": 0.427,
+    "bundled": 0.942
+   },
+   {
+    "activity": 96,
+    "highRisk": 0.437,
+    "bundled": 0.906
+   },
+   {
+    "activity": 64,
+    "highRisk": 0.366,
+    "bundled": 0.899
+   },
+   {
+    "activity": 62,
+    "highRisk": 0.28,
+    "bundled": 0.911
+   },
+   {
+    "activity": 74,
+    "highRisk": 0.361,
+    "bundled": 0.862
+   },
+   {
+    "activity": 62,
+    "highRisk": 0.311,
+    "bundled": 0.88
+   },
+   {
+    "activity": 38,
+    "highRisk": 0.262,
+    "bundled": 0.903
+   },
+   {
+    "activity": 46,
+    "highRisk": 0.282,
+    "bundled": 0.87
+   },
+   {
+    "activity": 48,
+    "highRisk": 0.274,
+    "bundled": 0.868
+   },
+   {
+    "activity": 62,
+    "highRisk": 0.287,
+    "bundled": 0.911
+   },
+   {
+    "activity": 45,
+    "highRisk": 0.256,
+    "bundled": 0.819
+   },
+   {
+    "activity": 52,
+    "highRisk": 0.238,
+    "bundled": 0.903
+   },
+   {
+    "activity": 65,
+    "highRisk": 0.407,
+    "bundled": 0.846
+   },
+   {
+    "activity": 66,
+    "highRisk": 0.389,
+    "bundled": 0.902
+   },
+   {
+    "activity": 87,
+    "highRisk": 0.333,
+    "bundled": 0.897
+   },
+   {
+    "activity": 68,
+    "highRisk": 0.354,
+    "bundled": 0.872
+   },
+   {
+    "activity": 67,
+    "highRisk": 0.365,
+    "bundled": 0.906
+   },
+   {
+    "activity": 100,
+    "highRisk": 0.385,
+    "bundled": 0.907
+   },
+   {
+    "activity": 67,
+    "highRisk": 0.396,
+    "bundled": 0.896
+   },
+   {
+    "activity": 74,
+    "highRisk": 0.376,
+    "bundled": 0.895
+   },
+   {
+    "activity": 71,
+    "highRisk": 0.328,
+    "bundled": 0.876
+   },
+   {
+    "activity": 75,
+    "highRisk": 0.466,
+    "bundled": 0.928
+   },
+   {
+    "activity": 78,
+    "highRisk": 0.511,
+    "bundled": 0.936
+   },
+   {
+    "activity": 71,
+    "highRisk": 0.448,
+    "bundled": 0.914
+   }
+  ]
+ }
+}
