@@ -1,16 +1,16 @@
 {
- "stamp": "25 Oct 2026",
+ "stamp": "26 Oct 2026",
  "survival": {
   "totals": {
-   "tracked": 91907,
-   "flagged": 82131,
-   "calledIt": 63969
+   "tracked": 91913,
+   "flagged": 82136,
+   "calledIt": 63972
   },
   "current": {
    "survival_1h": 99.3,
    "survival_6h": 90.2,
-   "survival_24h": 61.2,
-   "survival_7d": 28.3,
+   "survival_24h": 61.1,
+   "survival_7d": 28.2,
    "survival_30d": 16.4,
    "median_lifespan_hours": 31.1
   }
@@ -19,8 +19,8 @@
   "days": 30,
   "hourOfDay": [
    {
-    "activity": 98,
-    "highRisk": 0.427,
+    "activity": 97,
+    "highRisk": 0.434,
     "bundled": 0.942
    },
    {
@@ -91,7 +91,7 @@
    {
     "activity": 87,
     "highRisk": 0.333,
-    "bundled": 0.897
+    "bundled": 0.898
    },
    {
     "activity": 68,
@@ -134,9 +134,9 @@
     "bundled": 0.936
    },
    {
-    "activity": 71,
-    "highRisk": 0.448,
-    "bundled": 0.914
+    "activity": 69,
+    "highRisk": 0.444,
+    "bundled": 0.916
    }
   ]
  }
