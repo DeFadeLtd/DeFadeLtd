@@ -17,7 +17,7 @@
 <a href="https://defade.org/heatmap"><img src="assets/rug-clock.svg" width="49.5%" alt="Rug Clock: scan activity and the share of new tokens scored high risk, for each hour of the day."></a>
 <a href="https://defade.org/whitepaper"><img src="assets/chains.svg" width="49.5%" alt="Seven chains and their launchpads, every module on every chain."></a>
 
-<a href="https://defade.org/modules"><img src="assets/modules.svg" width="100%" alt="What a scan reads: 35 modules grouped by six questions, adding up to one rug pull probability from 0 to 100."></a>
+<a href="https://defade.org/modules"><img src="assets/modules.svg" width="100%" alt="What a scan reads: 34 modules grouped by six questions, adding up to one rug pull probability from 0 to 100."></a>
 
 ### Build on DeFade
 
