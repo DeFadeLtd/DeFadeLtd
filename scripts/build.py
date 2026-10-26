@@ -625,13 +625,15 @@ def chains():
 # --------------------------------------------------------------- modules ---
 
 QUESTIONS = [
-    ('whale', 'Who holds it?', ['Holder Distribution', 'Whale Alert', 'Bubble Map', 'Holder Overlap', 'Wallet Overlap', 'Notable Holders']),
-    ('bundle', 'How did it launch?', ['Bundle Detection', 'Historical Bundles', 'Sniper Bots', 'Fee Fingerprint']),
-    ('freshwallet', 'Who is behind the wallets?', ['Fresh Wallets', 'Funding Origin', 'Sybil Bands', 'Holder Network', 'Cross-Funding Graph', 'Copy Trading', 'Wallet Intelligence']),
+    ('whale', 'Who holds it?', ['Holder Distribution', 'Whale Alert', 'Top Holder History', 'Bubble Map', 'Holder Overlap', 'Wallet Overlap', 'Notable Holders']),
+    ('bundle', 'How did it launch?', ['Bundle Detection', 'Historical Bundles', 'Token Snipers', 'Fee Fingerprint', 'Terminal']),
+    ('freshwallet', 'Who is behind the wallets?', ['Fresh Wallets', 'Funding Origin', 'Sybil Bands', 'Holder Network', 'Cross-Funding Graph', 'Copy Trading', 'Signal Fusion', 'Wallet Reputation']),
     ('devtracker', 'What did the dev do?', ['Dev Wallet', 'Deployer Reputation', 'Exit Playbook', 'Wallet Profiler', 'Token Lifecycle']),
-    ('exitliq', 'Can you get out?', ['LP and Liquidity', 'Exit Liquidity', 'Dump Impact', 'Insider Profit Pressure', 'Position Stress Test', 'Contract Safety']),
-    ('smarttracker', 'What is the market saying?', ['Smart Money', 'Smart Money Signals', 'Social Links', 'Social Sentiment', 'X Community', 'AI Summary']),
+    ('exitliq', 'Can you get out?', ['Liquidity', 'Exit Liquidity', 'Insider Profit Pressure', 'Position Stress Test', 'Contract Safety']),
+    ('smarttracker', 'What is the market saying?', ['Smart Money', 'Smart Money Signals', 'Social Sentiment']),
 ]
+# 33 chips, and Rug Pull Probability drawn as the verdict under them: the 34
+# modules on defade.org/modules.
 
 
 def chip_rows(mods, width, size=10):
@@ -659,9 +661,9 @@ def modules(dfi):
     top = 92
     verdict_y = top + sum(heights) + gap * (len(heights) - 1) + 40
     card = Card(FULL, verdict_y + 70, 'What a DeFade scan reads',
-                '35 modules grouped by the six questions they answer, adding up to one rug pull probability from 0 to 100.')
+                '34 modules grouped by the six questions they answer, adding up to one rug pull probability from 0 to 100.')
     frame(card, seed=41, stars=50)
-    card.add(label(card, pad, 38, 'WHAT A SCAN READS', '35 MODULES · SIX QUESTIONS'))
+    card.add(label(card, pad, 38, 'WHAT A SCAN READS', '34 MODULES · SIX QUESTIONS'))
     card.add(card.text(pad, 68, 'The rug is not in the contract. It is in the wallets.', 'sansb', 17))
     y = top
     for r, h in enumerate(heights):
