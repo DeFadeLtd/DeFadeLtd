@@ -1,17 +1,17 @@
 {
- "stamp": "29 Oct 2026",
+ "stamp": "31 Oct 2026",
  "survival": {
   "totals": {
-   "tracked": 92338,
-   "flagged": 82454,
-   "calledIt": 64276
+   "tracked": 92557,
+   "flagged": 82617,
+   "calledIt": 64429
   },
   "current": {
    "survival_1h": 99.3,
-   "survival_6h": 90.1,
-   "survival_24h": 61,
-   "survival_7d": 28.2,
-   "survival_30d": 16.3,
+   "survival_6h": 90,
+   "survival_24h": 60.9,
+   "survival_7d": 28.1,
+   "survival_30d": 16.2,
    "median_lifespan_hours": 31.1
   }
  },
@@ -20,123 +20,123 @@
   "hourOfDay": [
    {
     "activity": 100,
-    "highRisk": 0.413,
+    "highRisk": 0.423,
+    "bundled": 0.896
+   },
+   {
+    "activity": 86,
+    "highRisk": 0.427,
     "bundled": 0.894
    },
    {
-    "activity": 92,
-    "highRisk": 0.428,
-    "bundled": 0.887
-   },
-   {
     "activity": 64,
-    "highRisk": 0.376,
-    "bundled": 0.875
+    "highRisk": 0.381,
+    "bundled": 0.894
    },
    {
-    "activity": 64,
-    "highRisk": 0.335,
-    "bundled": 0.913
+    "activity": 67,
+    "highRisk": 0.333,
+    "bundled": 0.904
    },
    {
-    "activity": 75,
-    "highRisk": 0.369,
-    "bundled": 0.854
-   },
-   {
-    "activity": 65,
-    "highRisk": 0.33,
-    "bundled": 0.889
-   },
-   {
-    "activity": 40,
-    "highRisk": 0.268,
-    "bundled": 0.897
-   },
-   {
-    "activity": 45,
-    "highRisk": 0.291,
-    "bundled": 0.878
-   },
-   {
-    "activity": 49,
-    "highRisk": 0.279,
+    "activity": 70,
+    "highRisk": 0.373,
     "bundled": 0.863
    },
    {
-    "activity": 57,
-    "highRisk": 0.276,
-    "bundled": 0.9
+    "activity": 48,
+    "highRisk": 0.331,
+    "bundled": 0.901
    },
    {
     "activity": 41,
-    "highRisk": 0.286,
-    "bundled": 0.804
+    "highRisk": 0.26,
+    "bundled": 0.898
+   },
+   {
+    "activity": 46,
+    "highRisk": 0.291,
+    "bundled": 0.879
    },
    {
     "activity": 51,
-    "highRisk": 0.227,
-    "bundled": 0.902
+    "highRisk": 0.276,
+    "bundled": 0.851
    },
    {
-    "activity": 65,
-    "highRisk": 0.395,
-    "bundled": 0.842
+    "activity": 57,
+    "highRisk": 0.274,
+    "bundled": 0.894
+   },
+   {
+    "activity": 41,
+    "highRisk": 0.294,
+    "bundled": 0.816
+   },
+   {
+    "activity": 47,
+    "highRisk": 0.235,
+    "bundled": 0.903
    },
    {
     "activity": 63,
-    "highRisk": 0.407,
-    "bundled": 0.888
-   },
-   {
-    "activity": 87,
-    "highRisk": 0.321,
-    "bundled": 0.877
-   },
-   {
-    "activity": 67,
-    "highRisk": 0.323,
-    "bundled": 0.87
-   },
-   {
-    "activity": 64,
-    "highRisk": 0.343,
-    "bundled": 0.883
-   },
-   {
-    "activity": 100,
-    "highRisk": 0.366,
-    "bundled": 0.887
-   },
-   {
-    "activity": 67,
-    "highRisk": 0.394,
-    "bundled": 0.892
-   },
-   {
-    "activity": 74,
-    "highRisk": 0.37,
-    "bundled": 0.883
-   },
-   {
-    "activity": 73,
-    "highRisk": 0.316,
-    "bundled": 0.872
+    "highRisk": 0.367,
+    "bundled": 0.839
    },
    {
     "activity": 68,
-    "highRisk": 0.494,
-    "bundled": 0.927
+    "highRisk": 0.4,
+    "bundled": 0.88
+   },
+   {
+    "activity": 91,
+    "highRisk": 0.329,
+    "bundled": 0.871
+   },
+   {
+    "activity": 69,
+    "highRisk": 0.331,
+    "bundled": 0.87
+   },
+   {
+    "activity": 69,
+    "highRisk": 0.363,
+    "bundled": 0.853
+   },
+   {
+    "activity": 95,
+    "highRisk": 0.39,
+    "bundled": 0.872
+   },
+   {
+    "activity": 71,
+    "highRisk": 0.404,
+    "bundled": 0.881
+   },
+   {
+    "activity": 75,
+    "highRisk": 0.396,
+    "bundled": 0.887
    },
    {
     "activity": 72,
-    "highRisk": 0.506,
-    "bundled": 0.922
+    "highRisk": 0.332,
+    "bundled": 0.874
    },
    {
-    "activity": 67,
-    "highRisk": 0.437,
-    "bundled": 0.908
+    "activity": 71,
+    "highRisk": 0.51,
+    "bundled": 0.918
+   },
+   {
+    "activity": 73,
+    "highRisk": 0.492,
+    "bundled": 0.915
+   },
+   {
+    "activity": 63,
+    "highRisk": 0.417,
+    "bundled": 0.901
    }
   ]
  }
