@@ -3,9 +3,13 @@
 
 Every card is a self-contained SVG in assets/: the fonts are subset to the
 glyphs the card uses and embedded, the icons are inline, and nothing is
-fetched when GitHub shows it. Two cards carry live figures from the public
-pages of defade.org (the Survival page's track record and survival curve,
-and the Rug Clock); the workflow in .github/workflows/refresh.yml redraws them daily.
+fetched when GitHub shows it. The cards wear defade.org's X-ray look: film
+plates on a lightbox, the brand cyan, nothing round, condensed capitals and
+a typewriter. Two cards carry live figures from the public pages of
+defade.org (the Survival page's track record and survival curve, and the Rug
+Clock); the workflow in .github/workflows/refresh.yml redraws them daily.
+They show shares, never counts: the track record is the share of flagged
+tokens that rugged after the flag, and data/live.json keeps only that.
 
     pip install fonttools brotli
     python scripts/build.py            # fetch live figures, draw every card
@@ -21,7 +25,6 @@ import io
 import json
 import math
 import os
-import random
 import sys
 import urllib.request
 from collections import defaultdict
@@ -34,18 +37,25 @@ ASSETS = os.path.join(ROOT, 'assets')
 API = 'https://api.defade.org'
 UA = 'DeFade-profile/1.0 (+https://github.com/DeFadeLtd)'
 
+# The X-ray look of defade.org (css/ui-xray.css): film on a lightbox, the
+# brand cyan, nothing round, no gradients, condensed capitals for headings
+# and a typewriter for labels.
 C = {
-    'bg': '#05060f',
-    'panel': '#0a0c1c',
-    'text': '#f0f0f8',
-    'dim': '#9095bb',
-    'faint': '#5d6189',
+    'bg': '#05080b',      # the page
+    'film': '#0a151b',    # a film plate
+    'line': '#1d2f37',    # a plate's edge
+    'light': '#d6eaf0',   # the lightbox
+    'tab': '#6f8790',     # the clip on top of a film
+    'text': '#e8f3f6',
+    'bone': '#d7eef5',
+    'dim': '#a9bcc4',
+    'faint': '#6f8790',
     'cyan': '#00d4ff',
-    'purple': '#bf5af2',
-    'green': '#30d158',
+    'green': '#4ade80',
     'yellow': '#f5c842',
-    'orange': '#f5873a',
-    'red': '#f0375c',
+    'orange': '#ff9f43',
+    'amber': '#ffc24d',
+    'red': '#ff4d5e',
     'extreme': '#ff2d55',
 }
 
@@ -62,11 +72,10 @@ BANDS = [
 
 FONTS = {
     # key: (file, css family stack behind the embedded face, weight)
-    'display': ('ChakraPetch-Bold.ttf', "'Chakra Petch', 'Segoe UI', sans-serif", 700),
-    'sans': ('Manrope-600.ttf', "Manrope, 'Segoe UI', Helvetica, Arial, sans-serif", 600),
-    'sansb': ('Manrope-800.ttf', "Manrope, 'Segoe UI', Helvetica, Arial, sans-serif", 800),
-    'mono': ('JetBrainsMono-Medium.ttf', "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", 500),
-    'monob': ('JetBrainsMono-Bold.ttf', "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", 700),
+    'display': ('BarlowCondensed-800.ttf', "'Barlow Condensed', 'Arial Narrow', sans-serif", 800),
+    'sans': ('Barlow-500.ttf', "Barlow, 'Segoe UI', Helvetica, Arial, sans-serif", 500),
+    'mono': ('CourierPrime-400.ttf', "'Courier Prime', 'Courier New', monospace", 400),
+    'monob': ('CourierPrime-700.ttf', "'Courier Prime', 'Courier New', monospace", 700),
 }
 _metrics = {}
 
@@ -104,6 +113,25 @@ def font_face(key, chars):
     data = base64.b64encode(buf.getvalue()).decode()
     return ('@font-face{font-family:df-%s;font-weight:%d;'
             'src:url(data:font/woff2;base64,%s) format("woff2")}' % (key, FONTS[key][2], data))
+
+
+def word_path(s, key, x, y, width):
+    """s as outlines, its advance stretched to width: the wordmark needs no
+    font to load and can clip the hatching inside its letters."""
+    from fontTools.pens.svgPathPen import SVGPathPen
+    from fontTools.pens.transformPen import TransformPen
+    tt = TTFont(font_path(key))
+    gs, cmap, upm = tt.getGlyphSet(), tt.getBestCmap(), tt['head'].unitsPerEm
+    adv = sum(tt['hmtx'][cmap[ord(ch)]][0] for ch in s)
+    k = width / adv
+    out, cx = [], 0
+    for ch in s:
+        name = cmap[ord(ch)]
+        pen = SVGPathPen(gs)
+        gs[name].draw(TransformPen(pen, (k, 0, 0, -k, x + cx * k, y)))
+        out.append(pen.getCommands())
+        cx += tt['hmtx'][name][0]
+    return ' '.join(out), adv * k, (tt['OS/2'].sCapHeight or upm * 0.7) * k
 
 
 # ---------------------------------------------------------------- cards ---
@@ -190,54 +218,37 @@ def _n(v):
     return str(v)
 
 
-def frame(card, seed, stars=46, glow=('cyan', 'purple'), radius=20):
-    """The space backdrop every card shares: deep black, two soft glows, stars."""
+def frame(card, rule=True):
+    """Every card: a film plate with a hard edge, the cyan rule along its top
+    (the site's scroll boxes and headers), faint scan lines across it."""
     w, h = card.w, card.h
-    card.defs.append(
-        '<clipPath id="clip"><rect width="%d" height="%d" rx="%d"/></clipPath>'
-        '<linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">'
-        '<stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient>'
-        '<radialGradient id="g1" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="%s" stop-opacity=".16"/>'
-        '<stop offset="1" stop-color="%s" stop-opacity="0"/></radialGradient>'
-        '<radialGradient id="g2" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="%s" stop-opacity=".18"/>'
-        '<stop offset="1" stop-color="%s" stop-opacity="0"/></radialGradient>'
-        '<linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">'
-        '<stop offset="0" stop-color="%s" stop-opacity="0"/><stop offset=".25" stop-color="%s" stop-opacity=".9"/>'
-        '<stop offset=".75" stop-color="%s" stop-opacity=".9"/><stop offset="1" stop-color="%s" stop-opacity="0"/>'
-        '</linearGradient>' % (
-            w, h, radius, C['cyan'], C['purple'],
-            C[glow[0]], C[glow[0]], C[glow[1]], C[glow[1]],
-            C['cyan'], C['cyan'], C['purple'], C['purple']))
-    card.css.append('@keyframes tw{0%,100%{opacity:.15}50%{opacity:.9}}')
-    rnd = random.Random(seed)
-    dots = []
-    for i in range(stars):
-        x, y = rnd.uniform(6, w - 6), rnd.uniform(6, h - 6)
-        r = rnd.choice([0.5, 0.6, 0.7, 0.8, 1.0, 1.2])
-        o = rnd.uniform(0.15, 0.6)
-        if i % 7 == 0:
-            dots.append('<circle cx="%.1f" cy="%.1f" r="%s" fill="#fff" style="animation:tw %.1fs ease-in-out %.1fs infinite"/>'
-                        % (x, y, _n(r + 0.3), rnd.uniform(2.5, 5.5), rnd.uniform(0, 3)))
-        else:
-            dots.append('<circle cx="%.1f" cy="%.1f" r="%s" fill="#fff" opacity="%.2f"/>' % (x, y, _n(r), o))
-    card.add(
-        '<g clip-path="url(#clip)">',
-        '<rect width="%d" height="%d" fill="%s"/>' % (w, h, C['bg']),
-        '<ellipse cx="%d" cy="%d" rx="%d" ry="%d" fill="url(#g1)"/>' % (w * 0.12, h * 0.1, w * 0.5, h * 0.9),
-        '<ellipse cx="%d" cy="%d" rx="%d" ry="%d" fill="url(#g2)"/>' % (w * 0.9, h * 0.95, w * 0.55, h * 0.9),
-        ''.join(dots),
-        '</g>',
-        '<rect x=".5" y=".5" width="%d" height="%d" rx="%d" fill="none" stroke="#fff" stroke-opacity=".09"/>' % (w - 1, h - 1, radius),
-        '<rect x="%d" y="0" width="%d" height="1.5" fill="url(#edge)"/>' % (radius, w - 2 * radius),
-    )
+    card.defs.append('<pattern id="grain" width="4" height="3" patternUnits="userSpaceOnUse">'
+                     '<rect width="4" height="1" fill="#fff" fill-opacity=".018"/></pattern>')
+    card.add('<rect width="%d" height="%d" fill="%s"/>' % (w, h, C['film']),
+             '<rect width="%d" height="%d" fill="url(#grain)"/>' % (w, h),
+             '<rect x=".5" y=".5" width="%d" height="%d" fill="none" stroke="%s"/>' % (w - 1, h - 1, C['line']))
+    if rule:
+        card.add('<rect width="%d" height="3" fill="%s"/>' % (w, C['cyan']))
 
 
 def label(card, x, y, main, rest='', color=None, anchor='start'):
-    """The small mono kicker over every block: DEFADE · WHAT IT IS."""
+    """The typewritten kicker over every block: DEFADE · WHAT IT IS."""
     parts = [(main, color or C['cyan'], 'monob')]
     if rest:
         parts.append(('  ' + rest, C['faint'], 'mono'))
-    return card.spans(x, y, parts, font='mono', size=11, ls=2.2, anchor=anchor)
+    return card.spans(x, y, parts, font='mono', size=11.5, ls=1.8, anchor=anchor)
+
+
+def heading(card, x, y, s, size=22, fill=None, anchor='start'):
+    """A heading as the X-ray pages set them: condensed, capitals."""
+    return card.text(x, y, s.upper(), 'display', size, fill or C['text'], anchor, ls=0.3)
+
+
+def lightbox(card, x, y, w, h):
+    """A film on the lightbox: the light frame, the clip on top, the dark plate."""
+    return ('<rect x="%s" y="%s" width="%s" height="%s" fill="%s"/>' % (_n(x), _n(y), _n(w), _n(h), C['light']) +
+            '<rect x="%s" y="%s" width="%s" height="%s" fill="%s"/>' % (_n(x + 8), _n(y + 8), _n(w - 16), _n(h - 16), C['bg']) +
+            '<rect x="%s" y="%s" width="%s" height="7" fill="%s"/>' % (_n(x + w * 0.35), _n(y), _n(w * 0.3), C['tab']))
 
 
 def icon(svg, x, y, size, color=None):
@@ -253,7 +264,7 @@ def icon(svg, x, y, size, color=None):
     inner = inner.replace('currentColor', stroke)
     s = size / 24
     return ('<g transform="translate(%s %s) scale(%s)" fill="none" stroke="%s" stroke-width="2" '
-            'stroke-linecap="round" stroke-linejoin="round">%s</g>' % (_n(x), _n(y), _n(s), stroke, inner))
+            'stroke-linecap="square" stroke-linejoin="miter">%s</g>' % (_n(x), _n(y), _n(s), stroke, inner))
 
 
 def png_data(path, size=None):
@@ -272,7 +283,7 @@ def load_dfi():
 
 
 # Chain marks, drawn as the site draws them (js/evm-ui.js); Robinhood and Arc
-# are the site's own PNGs.
+# are the site's own PNGs. The launchpads each chain's feed reads.
 CHAINS = [
     ('solana', 'Solana', ['pump.fun', 'LaunchLab', 'Meteora DBC', 'Boop', 'MetaDAO']),
     ('ethereum', 'Ethereum', ['based.bid', 'Clanker', 'Doppler']),
@@ -281,6 +292,7 @@ CHAINS = [
     ('robinhood', 'Robinhood', ['Pons', 'Clank.trade', 'Pools.trade', 'Torch', 'Clanker', 'Doppler', 'based.bid', 'o1']),
     ('arc', 'Arc', ['Argus', 'Tolly', 'Minara', 'ubi.fun', 'Warp', 'Foci', 'Peach', 'Faze', 'based.bid', 'o1']),
     ('hyperevm', 'Hyperliquid', ['LiquidLaunch']),
+    ('monad', 'Monad', ['nad.fun', 'flap.sh']),
 ]
 
 
@@ -288,8 +300,9 @@ def chain_mark(key, x, y, size, uid):
     s = size / 24
     g = '<g transform="translate(%s %s) scale(%s)">' % (_n(x), _n(y), _n(s))
     if key == 'solana':
-        return (g + '<defs><linearGradient id="sol%s" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#9945FF"/>'
-                '<stop offset="1" stop-color="#14F195"/></linearGradient></defs><path fill="url(#sol%s)" d="M5.2 16.2c.2-.2.5-.3.7-.3h15c.4 0 .6.5.3.8l-3 3c-.2.2-.5.3-.7.3h-15c-.4 0-.6-.5-.3-.8l3-3zM5.2 4.3c.2-.2.5-.3.7-.3h15c.4 0 .6.5.3.8l-3 3c-.2.2-.5.3-.7.3h-15c-.4 0-.6-.5-.3-.8l3-3zM18.5 10.2c-.2-.2-.5-.3-.7-.3h-15c-.4 0-.6.5-.3.8l3 3c.2.2.5.3.7.3h15c.4 0 .6-.5.3-.8l-3-3z"/></g>' % (uid, uid))
+        return (g + '<path fill="#14F195" d="M5.2 16.2c.2-.2.5-.3.7-.3h15c.4 0 .6.5.3.8l-3 3c-.2.2-.5.3-.7.3h-15c-.4 0-.6-.5-.3-.8l3-3z"/>'
+                '<path fill="#9945FF" d="M5.2 4.3c.2-.2.5-.3.7-.3h15c.4 0 .6.5.3.8l-3 3c-.2.2-.5.3-.7.3h-15c-.4 0-.6-.5-.3-.8l3-3z"/>'
+                '<path fill="#5fa3c8" d="M18.5 10.2c-.2-.2-.5-.3-.7-.3h-15c-.4 0-.6.5-.3.8l3 3c.2.2.5.3.7.3h15c.4 0 .6-.5.3-.8l-3-3z"/></g>')
     if key == 'ethereum':
         return g + '<path fill="#8C9EFF" d="M12 1.5l6.2 10.3L12 15.5 5.8 11.8z"/><path fill="#8C9EFF" opacity=".65" d="M12 16.9l6.2-3.7L12 22.5l-6.2-9.3z"/></g>'
     if key == 'base':
@@ -299,12 +312,15 @@ def chain_mark(key, x, y, size, uid):
                 % (_n(x), _n(y), _n(size / 32)))
     if key == 'hyperevm':
         return g + '<circle cx="12" cy="12" r="10.5" fill="#0B2A25"/><path fill="#97FCE4" d="M5.2 7.6c0-1.9 1.9-2.8 3.2-1.5l2.1 2.1c.8.8 2.2.8 3 0l2.1-2.1c1.3-1.3 3.2-.4 3.2 1.5v8.8c0 1.9-1.9 2.8-3.2 1.5l-2.1-2.1c-.8-.8-2.2-.8-3 0l-2.1 2.1c-1.3 1.3-3.2.4-3.2-1.5z"/></g>'
-    # Robinhood and Arc: the site's PNG marks, in a circle.
+    if key == 'monad':
+        # The mark the site draws for Monad (js/evm-ui.js).
+        return g + ('<circle cx="12" cy="12" r="11.2" fill="#836EF9"/><path fill="#fff" fill-rule="evenodd" d="M12 5.4C10.09 5.4 5.4 10.09 5.4 12C5.4 13.91 10.09 18.6 12 18.6C13.91 18.6 18.6 13.91 18.6 12C18.6 10.09 13.91 5.4 12 5.4ZM10.97 15.77C10.17 15.56 8.01 11.78 8.23 10.97C8.44 10.17 12.22 8.01 13.03 8.23C13.83 8.44 15.99 12.22 15.77 13.03C15.56 13.83 11.78 15.99 10.97 15.77Z"/></g>')
+    # Robinhood and Arc: the site's PNG marks.
     data = png_data(os.path.join(ROOT, 'src', key + '.png'), 64)
-    return ('<clipPath id="cm%s"><circle cx="%s" cy="%s" r="%s"/></clipPath>'
-            '<image xlink:href="%s" x="%s" y="%s" width="%s" height="%s" clip-path="url(#cm%s)"/>' % (
-                uid, _n(x + size / 2), _n(y + size / 2), _n(size / 2), data, _n(x), _n(y), _n(size), _n(size), uid))
+    return '<image xlink:href="%s" x="%s" y="%s" width="%s" height="%s"/>' % (data, _n(x), _n(y), _n(size), _n(size))
 
+
+CHAIN_WORD = ['NO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN']
 
 # ----------------------------------------------------------------- hero ---
 #
@@ -315,50 +331,52 @@ def chain_mark(key, x, y, size, uid):
 FULL, HALF = 780, 386
 
 
+def wordmark(card, x, y, width, uid):
+    """DEFADE under the scan line, as the homepage draws it (js/ui-xray.js
+    markSvg): solid and faint above the line, outlined and hatched below."""
+    d, w, cap = word_path('DEFADE', 'display', x, y, width)
+    top = y - cap
+    scan = top + cap * 0.62
+    card.defs.append('<clipPath id="wt%s"><rect x="0" y="0" width="%d" height="%s"/></clipPath>'
+                     '<clipPath id="wb%s"><rect x="0" y="%s" width="%d" height="%d"/></clipPath>'
+                     '<clipPath id="ww%s"><path d="%s"/></clipPath>' % (uid, card.w, _n(scan), uid, _n(scan), card.w, card.h, uid, d))
+    hatch = ''.join('<line x1="%s" y1="%s" x2="%s" y2="%s"/>' % (_n(hx), _n(scan + 3), _n(hx + 3), _n(y + 2))
+                    for hx in [x + i * 8.5 for i in range(int(w / 8.5) + 2)])
+    card.add('<g clip-path="url(#wt%s)"><path d="%s" fill="%s" fill-opacity=".16"/></g>' % (uid, d, C['cyan']),
+             '<g clip-path="url(#wb%s)"><path d="%s" fill="none" stroke="%s" stroke-opacity=".55" stroke-width="1.2"/>'
+             '<g clip-path="url(#ww%s)" stroke="%s" stroke-opacity=".3" stroke-width="2">%s</g></g>' % (uid, d, C['cyan'], uid, C['bone'], hatch),
+             '<rect x="%s" y="%s" width="%s" height="9" fill="%s" fill-opacity=".1"/>' % (_n(x - 8), _n(scan - 4.5), _n(w + 16), C['cyan']),
+             '<rect x="%s" y="%s" width="%s" height="2" fill="%s"/>' % (_n(x - 8), _n(scan - 1), _n(w + 16), C['cyan']))
+    return top, w
+
+
 def hero(dfi):
-    card = Card(FULL, 330, 'DeFade, the multi-chain memecoin analyzer',
-                'Read the wallets, not the promises. A scan reads a token and lands on a rug pull probability.')
-    frame(card, seed=7, stars=64)
+    card = Card(FULL, 330, 'DEFADE, the multi-chain memecoin analyzer',
+                'See through the token. A scan reads a token and lands on a rug pull probability.')
+    frame(card)
 
-    # A planet's edge along the bottom, as on the site's banner.
-    card.defs.append(
-        '<linearGradient id="rim" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="%s" stop-opacity="0"/>'
-        '<stop offset=".3" stop-color="%s"/><stop offset=".7" stop-color="%s"/><stop offset="1" stop-color="%s" stop-opacity="0"/></linearGradient>'
-        '<radialGradient id="atmo" cx=".5" cy="0" r=".6"><stop offset="0" stop-color="%s" stop-opacity=".22"/><stop offset="1" stop-color="%s" stop-opacity="0"/></radialGradient>'
-        '<linearGradient id="tag" x1="32" y1="0" x2="300" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient>'
-        '<linearGradient id="word" x1="100" y1="0" x2="280" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient>'
-        '<clipPath id="logo"><rect x="32" y="32" width="56" height="56" rx="13"/></clipPath>'
-        % (C['cyan'], C['cyan'], C['purple'], C['purple'], C['purple'], C['purple'],
-           C['cyan'], C['purple'], C['cyan'], C['purple']))
-    card.add('<g clip-path="url(#clip)"><ellipse cx="390" cy="1240" rx="960" ry="925" fill="url(#atmo)"/>'
-             '<ellipse cx="390" cy="1240" rx="960" ry="925" fill="%s" stroke="url(#rim)" stroke-width="1.5"/></g>' % C['bg'])
-
-    # Left: the mark, the name, the line.
-    logo = png_data(os.path.join(ROOT, 'src', 'logo.png'), 168)
-    card.add('<image xlink:href="%s" x="32" y="32" width="56" height="56" clip-path="url(#logo)"/>' % logo,
-             '<rect x="32.5" y="32.5" width="55" height="55" rx="12.5" fill="none" stroke="#fff" stroke-opacity=".12"/>')
-    card.add(card.text(100, 77, 'DeFade', 'display', 48, 'url(#word)', ls=-1.2))
-    card.add(card.text(102, 99, 'MULTI-CHAIN MEMECOIN ANALYZER', 'mono', 10, C['dim'], ls=2.5))
-    card.add(card.text(32, 158, 'Read the wallets,', 'sansb', 31, C['text'], ls=-0.7))
-    card.add(card.text(32, 196, 'not the promises.', 'sansb', 31, 'url(#tag)', ls=-0.7))
-    card.add(card.text(32, 229, 'Paste any token. Get its rug pull probability,', 'sans', 13.5, C['dim']))
-    card.add(card.text(32, 248, 'and every wallet, funder and transaction', 'sans', 13.5, C['dim']))
-    card.add(card.text(32, 267, 'behind it.', 'sans', 13.5, C['dim']))
+    # Left: the name under the scan line, the headline, the line.
+    wordmark(card, 32, 108, 330, 'h')
+    card.add(card.spans(32, 152, [('SEE THROUGH THE ', C['text'], None), ('TOKEN.', C['cyan'], None)], 'display', 36, ls=0.2))
+    card.add(card.text(32, 186, 'Paste any token. Get its rug pull probability,', 'sans', 14, C['dim']))
+    card.add(card.text(32, 205, 'and every wallet, funder and transaction', 'sans', 14, C['dim']))
+    card.add(card.text(32, 224, 'behind it.', 'sans', 14, C['dim']))
     x = 32
     for i, (key, _, _) in enumerate(CHAINS):
-        card.add(chain_mark(key, x, 286, 16, 'h%d' % i))
+        card.add(chain_mark(key, x, 262, 16, 'h%d' % i))
         x += 23
-    card.add(card.text(x + 6, 299, 'SEVEN CHAINS', 'mono', 10, C['faint'], ls=1.6))
+    card.add(card.text(x + 6, 275, '%s CHAINS' % CHAIN_WORD[len(CHAINS)], 'mono', 11, C['faint'], ls=1.4))
+    card.add(card.text(32, 306, 'MULTI-CHAIN MEMECOIN ANALYZER', 'mono', 10.5, C['faint'], ls=1.6))
 
-    # Right: a scan running. The contract is clean, the wallets are not.
-    x0, y0, pw, ph = 398, 28, 354, 274
-    card.add('<rect x="%d" y="%d" width="%d" height="%d" rx="16" fill="%s" stroke="#fff" stroke-opacity=".1"/>' % (x0, y0, pw, ph, C['panel']),
-             '<rect x="%d" y="%d" width="%d" height="1" fill="url(#edge)" opacity=".6"/>' % (x0 + 16, y0, pw - 32))
-    card.add(card.text(x0 + 18, y0 + 28, 'SCAN', 'monob', 10.5, C['faint'], ls=2))
+    # Right: a scan running, on the lightbox. The contract is clean, the wallets are not.
+    x0, y0, pw, ph = 398, 22, 360, 290
+    card.add(lightbox(card, x0, y0, pw, ph))
+    ix, iw = x0 + 8, pw - 16
+    card.add(card.text(ix + 14, y0 + 34, 'SCAN', 'monob', 11, C['faint'], ls=1.6))
     addr = '4kTn…pump'
-    ax = x0 + 60
-    card.add(card.text(ax, y0 + 28, addr, 'mono', 12.5, C['cyan']))
-    aw = math.ceil(measure(addr, 'mono', 12.5)) + 2
+    ax = ix + 58
+    card.add(card.text(ax, y0 + 34, addr, 'mono', 13, C['cyan']))
+    aw = math.ceil(measure(addr, 'mono', 13)) + 2
     # The address types itself in: a cover slides off it, one character at a time.
     card.css.append(
         '@keyframes type{0%%,2%%{transform:translateX(0)}12%%,93%%{transform:translateX(%dpx)}94%%,100%%{transform:translateX(0)}}'
@@ -366,136 +384,116 @@ def hero(dfi):
         '@keyframes blink{0%%,49%%{opacity:1}50%%,100%%{opacity:0}}'
         '.caret{animation:type 10s steps(%d,end) infinite}.caret rect{animation:blink 1s step-end infinite}'
         % (aw, len(addr), len(addr)))
-    card.add('<rect class="type" x="%d" y="%d" width="%d" height="18" fill="%s"/>' % (ax - 1, y0 + 14, aw + 2, C['panel']))
-    card.add('<g class="caret"><rect x="%d" y="%d" width="7" height="15" fill="%s" opacity=".85"/></g>' % (ax, y0 + 16, C['cyan']))
-    card.add(card.text(x0 + pw - 18, y0 + 28, 'SOLANA · PUMP.FUN', 'mono', 10, C['faint'], 'end', ls=1))
-    card.add('<rect x="%d" y="%d" width="%d" height="1" fill="#fff" fill-opacity=".08"/>' % (x0 + 18, y0 + 42, pw - 36))
+    card.add('<rect class="type" x="%d" y="%d" width="%d" height="18" fill="%s"/>' % (ax - 1, y0 + 20, aw + 2, C['bg']))
+    card.add('<g class="caret"><rect x="%d" y="%d" width="7" height="15" fill="%s" opacity=".85"/></g>' % (ax, y0 + 22, C['cyan']))
+    card.add(card.text(ix + iw - 14, y0 + 34, 'SOLANA · PUMP.FUN', 'mono', 10.5, C['faint'], 'end'))
+    card.add('<rect x="%d" y="%d" width="%d" height="1" fill="%s"/>' % (ix + 14, y0 + 46, iw - 28, C['line']))
 
     rows = [
-        ('lock', 'Contract', 'mint, freeze revoked', C['green']),
-        ('liquidity', 'Liquidity', 'burned', C['green']),
-        ('bundle', 'Bundles', '38.4% at launch', C['red']),
-        ('freshwallet', 'Fresh Wallets', '14 from one funder', C['red']),
-        ('sniper', 'Snipers', '9 in the first 120 s', C['orange']),
-        ('devtracker', 'Dev Wallet', 'behind 3 earlier rugs', C['red']),
+        ('lock', 'CONTRACT', 'mint, freeze revoked', C['green']),
+        ('liquidity', 'LIQUIDITY', 'burned', C['green']),
+        ('bundle', 'BUNDLES', '38.4% at launch', C['red']),
+        ('freshwallet', 'FRESH WALLETS', '14 from one funder', C['red']),
+        ('sniper', 'SNIPERS', '9 in the first 120 s', C['amber']),
+        ('devtracker', 'DEV WALLET', 'behind 3 earlier rugs', C['red']),
     ]
     for i, (ic, name, finding, col) in enumerate(rows):
-        y = y0 + 66 + i * 25.5
+        y = y0 + 70 + i * 24
         cls = card.appear(1.5 + i * 0.42)
-        fx = x0 + pw - 18
+        fx = ix + iw - 14
         card.add('<g class="%s">' % cls,
-                 icon(dfi[ic], x0 + 18, y - 12, 15, C['dim']),
-                 card.text(x0 + 42, y, name, 'sans', 13, C['text']),
-                 '<circle cx="%s" cy="%s" r="3" fill="%s"/>' % (_n(fx - measure(finding, 'mono', 11.5) - 9), _n(y - 4), col),
-                 card.text(fx, y, finding, 'mono', 11.5, col, 'end'),
+                 icon(dfi[ic], ix + 14, y - 12, 15, C['dim']),
+                 card.text(ix + 38, y, name, 'display', 15, C['text'], ls=0.3),
+                 '<rect x="%s" y="%s" width="6" height="6" fill="%s"/>' % (_n(fx - measure(finding, 'mono', 12) - 12), _n(y - 7), col),
+                 card.text(fx, y, finding, 'mono', 12, col, 'end'),
                  '</g>')
-    # A scan line sweeping down while the modules report.
-    card.defs.append('<linearGradient id="sweep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="%s" stop-opacity="0"/>'
-                     '<stop offset="1" stop-color="%s" stop-opacity=".22"/></linearGradient>' % (C['cyan'], C['cyan']))
+    # The scan line sweeping down while the modules report.
     card.css.append('@keyframes sweep{0%%,14%%{transform:translateY(0);opacity:0}16%%{opacity:1}42%%{transform:translateY(%dpx);opacity:1}45%%,100%%{transform:translateY(%dpx);opacity:0}}'
-                    '.sweep{animation:sweep 10s linear infinite}' % (6 * 25.5, 6 * 25.5))
-    card.add('<rect class="sweep" x="%d" y="%d" width="%d" height="23" fill="url(#sweep)" opacity="0"/>' % (x0 + 1, y0 + 43, pw - 2))
+                    '.sweep{animation:sweep 10s linear infinite}' % (6 * 24, 6 * 24))
+    card.add('<g class="sweep" opacity="0"><rect x="%d" y="%d" width="%d" height="20" fill="%s" fill-opacity=".1"/>'
+             '<rect x="%d" y="%d" width="%d" height="2" fill="%s"/></g>' % (ix, y0 + 50, iw, C['cyan'], ix, y0 + 69, iw, C['cyan']))
 
-    # The verdict.
-    yv = y0 + 218
-    card.add('<rect x="%d" y="%d" width="%d" height="1" fill="#fff" fill-opacity=".08"/>' % (x0 + 18, yv - 12, pw - 36))
+    # The verdict: the IMPRESSION, a hard box in its colour.
+    yv = y0 + 212
+    card.add('<rect x="%d" y="%d" width="%d" height="1" fill="%s"/>' % (ix + 14, yv - 10, iw - 28, C['line']))
     score = 81
-    card.add(card.text(x0 + 18, yv + 8, 'RUG PULL PROBABILITY', 'mono', 10, C['dim'], ls=1.6))
+    card.add(card.text(ix + 14, yv + 8, 'RUG PULL PROBABILITY', 'mono', 10.5, C['dim'], ls=1.2))
     v = card.appear(4.3, dx=0)
-    card.add('<g class="%s">' % v, card.text(x0 + pw - 18, yv + 8, 'EXTREME RISK', 'monob', 11, C['extreme'], 'end', ls=1.4), '</g>')
-    card.defs.append('<linearGradient id="hot" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient>' % (C['orange'], C['extreme']))
+    bw_, bh_ = 128, 40
+    bx_ = ix + iw - 14 - bw_
+    card.add('<g class="%s">' % v,
+             '<rect x="%d" y="%d" width="%d" height="%d" fill="%s" fill-opacity=".1" stroke="%s" stroke-width="2"/>' % (bx_, yv - 4, bw_, bh_, C['extreme'], C['extreme']),
+             card.text(bx_ + 8, yv + 7, 'IMPRESSION', 'monob', 8, C['extreme'], ls=0.6),
+             card.text(bx_ + 8, yv + 30, 'EXTREME RISK', 'display', 21, C['extreme'], ls=0.2),
+             '</g>')
     n = card.appear(4.3, dx=0)
-    card.add('<g class="%s">' % n, card.text(x0 + 16, yv + 44, str(score), 'display', 34, 'url(#hot)'), '</g>')
-    bx, bw, by = x0 + 70, pw - 88, yv + 24
+    card.add('<g class="%s">' % n, card.text(ix + 12, yv + 52, str(score), 'display', 40, C['extreme']), '</g>')
+    bx, bw, by = ix + 60, iw - 74 - bw_ - 10, yv + 38
     for lo, hi, _, col in BANDS:
-        card.add('<rect x="%s" y="%d" width="%s" height="8" fill="%s" fill-opacity=".18"/>' % (
+        card.add('<rect x="%s" y="%d" width="%s" height="8" fill="%s" fill-opacity=".22"/>' % (
             _n(bx + bw * lo / 100), by, _n(bw * (hi - lo + 1) / 100 - 2), col))
     card.css.append('@keyframes fill{0%,43%{transform:scaleX(0)}55%,93%{transform:scaleX(1)}96%,100%{transform:scaleX(0)}}'
                     '.fill{transform-box:fill-box;transform-origin:left;animation:fill 10s cubic-bezier(.2,.7,.2,1) infinite}')
-    card.add('<rect class="fill" x="%d" y="%d" width="%s" height="8" rx="2" fill="url(#hot)"/>' % (bx, by, _n(bw * score / 100)))
+    card.add('<rect class="fill" x="%d" y="%d" width="%s" height="8" fill="%s"/>' % (bx, by, _n(bw * score / 100), C['extreme']))
     card.add(card.text(bx, by + 21, '0', 'mono', 9.5, C['faint']),
-             card.text(bx + bw * 0.45, by + 21, '45', 'mono', 9.5, C['faint'], 'middle'),
-             card.text(bx + bw * 0.75, by + 21, '75', 'mono', 9.5, C['faint'], 'middle'),
              card.text(bx + bw, by + 21, '100', 'mono', 9.5, C['faint'], 'end'))
     card.save('hero.svg')
 
 
 # ---------------------------------------------------------------- pulse ---
 
-def fmt_int(n):
-    return '{:,}'.format(int(n))
-
-
 def pulse(live):
-    tot, cur = live['survival']['totals'], live['survival']['current']
-    card = Card(FULL, 296, 'DeFade live: rugged after our flag',
-                'Tokens DeFade flagged first that collapsed later, out of every token flagged and tracked, '
-                'and how many memecoins are still alive after an hour, a day, a week and a month.')
-    frame(card, seed=11, stars=36, glow=('red', 'purple'))
+    cur = live['survival']['current']
+    share = live['survival']['shares']['ruggedOfFlagged']
+    card = Card(FULL, 280, 'DEFADE live: rugged after our flag',
+                'The share of the tokens DEFADE flagged that collapsed later, and how many memecoins are still '
+                'alive after an hour, a day, a week and a month.')
+    frame(card)
     card.css.append('@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}.live{animation:pulse 1.6s ease-in-out infinite}')
-    card.add('<circle class="live" cx="34" cy="34" r="4" fill="%s"/>' % C['green'])
-    card.add(label(card, 46, 38, 'LIVE FROM DEFADE.ORG', 'TRACK RECORD', C['green']))
-    card.add(card.text(card.w - 28, 38, 'updated ' + live['stamp'], 'mono', 10.5, C['faint'], 'end'))
+    card.add('<rect class="live" x="28" y="29" width="8" height="8" fill="%s"/>' % C['green'])
+    card.add(label(card, 44, 38, 'LIVE FROM DEFADE.ORG', 'TRACK RECORD', C['green']))
+    card.add(card.text(card.w - 28, 38, 'updated ' + live['stamp'], 'mono', 11, C['faint'], 'end'))
 
-    # The headline: flagged first, collapsed later. The Survival page's figures, as it prints them.
-    card.defs.append('<linearGradient id="big" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff"/>'
-                     '<stop offset="1" stop-color="#ffc2d1"/></linearGradient>')
-    card.add(card.text(30, 82, 'RUGGED AFTER OUR FLAG', 'mono', 11, C['dim'], ls=2))
-    card.add(card.text(26, 144, fmt_int(tot['calledIt']), 'display', 66, 'url(#big)', ls=-1))
-    card.add(card.text(30, 168, 'flagged first, collapsed later · every chain', 'mono', 10.5, C['faint']))
-
-    # Tracked and flagged, then the funnel the three figures make, as the site draws it.
-    for i, (val, what, col) in enumerate([(tot['tracked'], 'TOKENS TRACKED', '#e2e3f0'),
-                                          (tot['flagged'], 'TOKENS FLAGGED', C['orange'])]):
-        x = 30 + i * 150
-        card.add(card.text(x, 198, what, 'mono', 9.5, C['dim'], ls=1.6))
-        card.add(card.text(x, 221, fmt_int(val), 'monob', 19, col))
-    bx, bw, by = 30, 312, 236
+    # The headline: flagged first, collapsed later, as a share (owner,
+    # 2026-11-02: no counts on any card).
+    card.add(card.text(30, 84, 'RUGGED AFTER OUR FLAG', 'mono', 11.5, C['dim'], ls=1.6))
+    pct = '%d%%' % round(share)
+    card.add(card.text(26, 176, pct, 'display', 104, C['text'], ls=-1))
+    card.add(card.text(30, 204, 'of the tokens we flagged collapsed after', 'mono', 11.5, C['faint']))
+    card.add(card.text(30, 220, 'our flag · every chain', 'mono', 11.5, C['faint']))
+    bx, bw, by = 30, 300, 240
     card.css.append('@keyframes bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}'
                     '.bar{transform-box:fill-box;transform-origin:left;animation:bar 1.4s cubic-bezier(.2,.7,.2,1) both}')
-    card.add('<rect x="%d" y="%d" width="%d" height="9" rx="4.5" fill="#fff" fill-opacity=".14"/>' % (bx, by, bw))
-    card.add('<rect class="bar" style="animation-delay:.2s" x="%d" y="%d" width="%s" height="9" rx="4.5" fill="%s"/>' % (
-        bx, by, _n(bw * tot['flagged'] / tot['tracked']), C['orange']))
-    card.add('<rect class="bar" style="animation-delay:.5s" x="%d" y="%d" width="%s" height="9" rx="4.5" fill="%s"/>' % (
-        bx, by, _n(bw * tot['calledIt'] / tot['tracked']), C['red']))
-    x = bx
-    for what, dot in (('Tracked', '#5d6189'), ('Flagged', C['orange']), ('Rugged after our flag', C['red'])):
-        card.add('<circle cx="%s" cy="%d" r="3.5" fill="%s"/>' % (_n(x + 4), by + 25, dot))
-        card.add(card.text(x + 13, by + 29, what, 'mono', 10, C['dim']))
-        x += measure(what, 'mono', 10) + 30
-    card.add('<rect x="368" y="66" width="1" height="200" fill="#fff" fill-opacity=".08"/>')
+    card.add('<rect x="%d" y="%d" width="%d" height="8" fill="%s" fill-opacity=".15"/>' % (bx, by, bw, C['bone']))
+    card.add('<rect class="bar" style="animation-delay:.3s" x="%d" y="%d" width="%s" height="8" fill="%s"/>' % (
+        bx, by, _n(bw * share / 100), C['red']))
+    card.add('<rect x="368" y="66" width="1" height="186" fill="%s"/>' % C['line'])
 
     # The survival curve.
     pts = [('launch', 100.0), ('1 h', cur['survival_1h']), ('6 h', cur['survival_6h']),
            ('24 h', cur['survival_24h']), ('7 d', cur['survival_7d']), ('30 d', cur['survival_30d'])]
     month = int(round(float(cur['survival_30d'])))
-    card.add(card.spans(394, 84, [('%d in 100' % month, C['cyan'], 'sansb'),
-                                  (' memecoins are alive after a month', C['text'], None)], 'sansb', 15))
+    card.add(card.spans(394, 84, [('%d IN 100' % month, C['cyan'], None),
+                                  (' MEMECOINS ARE ALIVE AFTER A MONTH', C['text'], None)], 'display', 19, ls=0.2))
     card.add(card.text(394, 104, 'Half are dead within %s hours. Every memecoin the' % _n(round(float(cur['median_lifespan_hours']))),
-                       'sans', 11.5, C['faint']))
-    card.add(card.text(394, 119, 'Survival Tracker follows, from launch.', 'sans', 11.5, C['faint']))
-    left, right, top, bottom = 424, 742, 152, 248
+                       'sans', 12, C['faint']))
+    card.add(card.text(394, 120, 'Survival Tracker follows, from launch.', 'sans', 12, C['faint']))
+    left, right, top, bottom = 424, 742, 150, 236
     xs = [left + (right - left) * i / (len(pts) - 1) for i in range(len(pts))]
     ys = [bottom - (bottom - top) * float(v) / 100 for _, v in pts]
     for g in (0, 50, 100):
         gy = bottom - (bottom - top) * g / 100
-        card.add('<rect x="%d" y="%s" width="%d" height="1" fill="#fff" fill-opacity="%s"/>' % (left, _n(gy), right - left, '.1' if g == 0 else '.05'))
-        card.add(card.text(left - 10, gy + 3.5, '%d%%' % g, 'mono', 9.5, C['faint'], 'end'))
+        card.add('<rect x="%d" y="%s" width="%d" height="1" fill="%s" fill-opacity="%s"/>' % (left, _n(gy), right - left, C['bone'], '.2' if g == 0 else '.08'))
+        card.add(card.text(left - 10, gy + 3.5, '%d%%' % g, 'mono', 10, C['faint'], 'end'))
     d = smooth_path(list(zip(xs, ys)))
-    card.defs.append('<linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="%s" stop-opacity=".28"/>'
-                     '<stop offset="1" stop-color="%s" stop-opacity="0"/></linearGradient>'
-                     '<linearGradient id="line" x1="%d" y1="0" x2="%d" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient>'
-                     % (C['purple'], C['purple'], left, right, C['cyan'], C['purple']))
     card.css.append('@keyframes draw{from{stroke-dashoffset:800}to{stroke-dashoffset:0}}'
-                    '.draw{stroke-dasharray:800;animation:draw 2.4s cubic-bezier(.3,.6,.2,1) .3s both}'
-                    '@keyframes rise{from{opacity:0}to{opacity:1}}.rise{animation:rise .8s ease-out 1.6s both}')
-    card.add('<path class="rise" d="%s L%s %s L%s %s Z" fill="url(#area)"/>' % (d, _n(xs[-1]), bottom, _n(xs[0]), bottom))
-    card.add('<path class="draw" d="%s" fill="none" stroke="url(#line)" stroke-width="2.5" stroke-linecap="round"/>' % d)
+                    '.draw{stroke-dasharray:800;animation:draw 2.4s cubic-bezier(.3,.6,.2,1) .3s both}')
+    card.add('<path class="draw" d="%s" fill="none" stroke="%s" stroke-width="2.5"/>' % (d, C['cyan']))
     for i, ((name, v), x, y) in enumerate(zip(pts, xs, ys)):
-        card.add('<circle cx="%s" cy="%s" r="4" fill="%s" stroke="%s" stroke-width="2"/>' % (_n(x), _n(y), C['bg'], C['cyan'] if i < 3 else C['purple']))
+        card.add('<rect x="%s" y="%s" width="8" height="8" fill="%s" stroke="%s" stroke-width="2"/>' % (_n(x - 4), _n(y - 4), C['film'], C['cyan']))
         if i:
-            card.add(card.text(x, y - 11, '%s%%' % _n(round(float(v), 1)), 'monob', 11, C['text'], 'middle'))
-        card.add(card.text(x, bottom + 18, name, 'mono', 10, C['dim'], 'middle'))
+            card.add(card.text(x, y - 11, '%s%%' % _n(round(float(v), 1)), 'monob', 11.5, C['text'], 'middle'))
+        card.add(card.text(x, bottom + 18, name, 'mono', 10.5, C['dim'], 'middle'))
     card.save('pulse.svg')
 
 
@@ -530,33 +528,34 @@ def mix(a, b, t):
 
 
 def ramp(t):
+    """Fewer high-risk tokens to more: cyan, through the warning amber, to the alarm red."""
     t = max(0.0, min(1.0, t))
-    return mix(C['cyan'], C['purple'], t / 0.5) if t < 0.5 else mix(C['purple'], C['red'], (t - 0.5) / 0.5)
+    return mix(C['cyan'], C['amber'], t / 0.5) if t < 0.5 else mix(C['amber'], C['red'], (t - 0.5) / 0.5)
 
 
-HALF_H = 446
+HALF_H = 486
 
 
 def rug_clock(live):
     heat = live['heatmap']
     hours = heat['hourOfDay']
-    card = Card(HALF, HALF_H, 'DeFade Rug Clock',
+    card = Card(HALF, HALF_H, 'DEFADE Rug Clock',
                 'Scan activity and the share of new tokens scored high risk, for each hour of the day in UTC, over the last %d days.' % heat['days'])
-    frame(card, seed=23, stars=30, glow=('purple', 'purple'))
-    card.add(label(card, 24, 38, 'RUG CLOCK', '%d DAYS · UTC' % heat['days'], C['purple']))
-    card.add(card.text(24, 66, 'When the risky launches land', 'sansb', 16))
-    card.add(card.text(24, 86, 'Each hour: how busy scanning was, and how', 'sans', 11.5, C['faint']))
-    card.add(card.text(24, 101, 'many new tokens scored high risk', 'sans', 11.5, C['faint']))
+    frame(card)
+    card.add(label(card, 24, 38, 'RUG CLOCK', '%d DAYS · UTC' % heat['days']))
+    card.add(heading(card, 24, 68, 'When the risky launches land', 22))
+    card.add(card.text(24, 90, 'Each hour: how busy scanning was, and how', 'sans', 12, C['faint']))
+    card.add(card.text(24, 106, 'many new tokens scored high risk', 'sans', 12, C['faint']))
 
-    cx, cy, r0, r1 = HALF // 2, 262, 44, 126
+    cx, cy, r0, r1 = HALF // 2, 286, 44, 130
     shares = [h['highRisk'] for h in hours if h and h.get('highRisk') is not None]
     lo, hi = (min(shares), max(shares)) if shares else (0, 1)
     peak = max(range(24), key=lambda i: (hours[i] or {}).get('highRisk') or -1)
     for rr in (r0, (r0 + r1) / 2, r1):
-        card.add('<circle cx="%d" cy="%d" r="%s" fill="none" stroke="#fff" stroke-opacity=".06"/>' % (cx, cy, _n(rr)))
+        card.add('<circle cx="%d" cy="%d" r="%s" fill="none" stroke="%s" stroke-opacity=".1"/>' % (cx, cy, _n(rr), C['bone']))
     for h in range(0, 24, 6):
         a = math.radians(h * 15 - 90)
-        card.add(card.text(cx + (r1 + 13) * math.cos(a), cy + (r1 + 13) * math.sin(a) + 3.5, '%02d' % h, 'mono', 10, C['faint'], 'middle'))
+        card.add(card.text(cx + (r1 + 14) * math.cos(a), cy + (r1 + 14) * math.sin(a) + 3.5, '%02d' % h, 'mono', 10.5, C['faint'], 'middle'))
     card.css.append('@keyframes grow{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}'
                     '.w{transform-origin:%dpx %dpx;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}' % (cx, cy))
     for i, hd in enumerate(hours):
@@ -572,53 +571,52 @@ def rug_clock(live):
             _n(cx + rr * math.cos(a1)), _n(cy + rr * math.sin(a1)),
             _n(cx + r0 * math.cos(a1)), _n(cy + r0 * math.sin(a1)), r0, r0,
             _n(cx + r0 * math.cos(a0)), _n(cy + r0 * math.sin(a0)))
-        extra = ' stroke="#fff" stroke-width="1.5"' if i == peak else ''
+        extra = ' stroke="#fff" stroke-width="2"' if i == peak else ''
         card.add('<path class="w" style="animation-delay:%.2fs" d="%s" fill="%s" fill-opacity="%s"%s/>' % (
             0.2 + i * 0.04, pth, col, '1' if i == peak else '.85', extra))
-    # A radar hand, sweeping the dial the way a scan sweeps a token.
-    card.defs.append('<linearGradient id="hand" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/>'
-                     '<stop offset="1" stop-color="#fff" stop-opacity=".5"/></linearGradient>')
+    # The scan line, sweeping the dial the way a scan sweeps a token.
     card.css.append('@keyframes spin{to{transform:rotate(360deg)}}.hand{transform-origin:%dpx %dpx;animation:spin 12s linear infinite}' % (cx, cy))
-    card.add('<g class="hand"><rect x="%d" y="%s" width="%d" height="1.4" fill="url(#hand)"/></g>' % (cx + r0, _n(cy - 0.7), r1 - r0 + 4))
-    card.add('<circle cx="%d" cy="%d" r="%d" fill="%s"/>' % (cx, cy, r0 - 4, C['bg']))
+    card.add('<g class="hand"><rect x="%d" y="%s" width="%d" height="2" fill="%s"/></g>' % (cx + r0, _n(cy - 1), r1 - r0 + 6, C['cyan']))
+    card.add('<circle cx="%d" cy="%d" r="%d" fill="%s"/>' % (cx, cy, r0 - 4, C['film']))
     pk = hours[peak] or {}
-    card.add(card.text(cx, cy - 3, '%02d:00' % peak, 'display', 20, C['text'], 'middle'))
-    card.add(card.text(cx, cy + 12, 'RISKIEST', 'mono', 8.5, C['faint'], 'middle', ls=1.4))
-    card.add(card.text(cx, cy + 24, '%d%% high risk' % round(100 * (pk.get('highRisk') or 0)), 'mono', 8.5, C['red'], 'middle'))
+    card.add(card.text(cx, cy - 2, '%02d:00' % peak, 'display', 24, C['text'], 'middle'))
+    card.add(card.text(cx, cy + 13, 'RISKIEST', 'mono', 9, C['faint'], 'middle', ls=1.2))
+    card.add(card.text(cx, cy + 25, '%d%% high risk' % round(100 * (pk.get('highRisk') or 0)), 'mono', 9, C['red'], 'middle'))
 
     # Legend.
     ly = HALF_H - 22
     for k in range(5):
-        card.add('<rect x="%d" y="%d" width="12" height="6" rx="1.5" fill="%s"/>' % (24 + k * 14, ly - 6, ramp(k / 4)))
-    card.add(card.text(24 + 5 * 14 + 4, ly, 'fewer → more high risk', 'mono', 9.5, C['faint']))
-    card.add(card.text(card.w - 24, ly, 'length: scans', 'mono', 9.5, C['faint'], 'end'))
+        card.add('<rect x="%d" y="%d" width="12" height="6" fill="%s"/>' % (24 + k * 14, ly - 6, ramp(k / 4)))
+    card.add(card.text(24 + 5 * 14 + 4, ly, 'fewer to more high risk', 'mono', 10, C['faint']))
+    card.add(card.text(card.w - 24, ly, 'length: scans', 'mono', 10, C['faint'], 'end'))
     card.save('rug-clock.svg')
 
 
 # ---------------------------------------------------------------- chains ---
 
 def chains():
-    card = Card(HALF, HALF_H, 'Seven chains, one UI', 'The chains and launchpads DeFade reads, all with the same modules.')
-    frame(card, seed=31, stars=30, glow=('cyan', 'cyan'))
+    word = CHAIN_WORD[len(CHAINS)].capitalize()
+    card = Card(HALF, HALF_H, '%s chains, one UI' % word, 'The chains and launchpads DEFADE reads, all with the same modules.')
+    frame(card)
     card.add(label(card, 24, 38, 'COVERAGE', 'ONE UI'))
-    card.add(card.text(24, 66, 'Every module, on every chain', 'sansb', 16))
-    card.add(card.text(24, 86, 'The chain and the launchpad are read from', 'sans', 11.5, C['faint']))
-    card.add(card.text(24, 101, 'the address. Nothing to pick.', 'sans', 11.5, C['faint']))
+    card.add(heading(card, 24, 68, 'Every module, on every chain', 22))
+    card.add(card.text(24, 90, 'The chain and the launchpad are read from', 'sans', 12, C['faint']))
+    card.add(card.text(24, 106, 'the address. Nothing to pick.', 'sans', 12, C['faint']))
     for i, (key, name, pads) in enumerate(CHAINS):
-        y = 120 + i * 42
-        card.add('<rect x="16" y="%d" width="%d" height="38" rx="10" fill="#fff" fill-opacity="%s"/>' % (y, HALF - 32, '.035' if i % 2 == 0 else '0'))
+        y = 122 + i * 43
+        card.add('<rect x="16" y="%d" width="%d" height="39" fill="%s" fill-opacity="%s"/>' % (y, HALF - 32, C['bone'], '.05' if i % 2 == 0 else '0'))
         card.add(chain_mark(key, 26, y + 8, 22, 'c%d' % i))
-        card.add(card.text(58, y + 17, name, 'sansb', 13.5, C['text']))
+        card.add(card.text(58, y + 18, name.upper(), 'display', 16, C['text'], ls=0.3))
         shown, more = [], 0
         for p in pads:
-            if measure(' · '.join(shown + [p]) + ' +9', 'mono', 9.5) > 236 and shown:
+            if measure(' · '.join(shown + [p]) + ' +9', 'mono', 10) > 228 and shown:
                 more = len(pads) - len(shown)
                 break
             shown.append(p)
         line = ' · '.join(shown) + (' +%d' % more if more else '')
-        card.add(card.text(58, y + 31, line, 'mono', 9.5, C['dim']))
-        card.add(card.text(HALF - 26, y + 18, '%d' % len(pads), 'display', 15, C['cyan'], 'end'))
-        card.add(card.text(HALF - 26, y + 31, 'launchpad' + ('s' if len(pads) != 1 else ''), 'mono', 8.5, C['faint'], 'end'))
+        card.add(card.text(58, y + 32, line, 'mono', 10, C['dim']))
+        card.add(card.text(HALF - 26, y + 19, '%d' % len(pads), 'display', 18, C['cyan'], 'end'))
+        card.add(card.text(HALF - 26, y + 32, 'launchpad' + ('s' if len(pads) != 1 else ''), 'mono', 9, C['faint'], 'end'))
     card.save('chains.svg')
 
 
@@ -636,7 +634,7 @@ QUESTIONS = [
 # modules on defade.org/modules.
 
 
-def chip_rows(mods, width, size=10):
+def chip_rows(mods, width, size=10.5):
     """Lay the module chips out in rows that fit width: [(x offset, name, chip width)] per row."""
     rows, row, x = [], [], 0
     for m in mods:
@@ -657,14 +655,14 @@ def modules(dfi):
     heights = []
     for r in range(0, len(QUESTIONS), cols):
         n = max(len(laid[i]) for i in range(r, min(r + cols, len(QUESTIONS))))
-        heights.append(52 + n * 24)
-    top = 92
-    verdict_y = top + sum(heights) + gap * (len(heights) - 1) + 40
-    card = Card(FULL, verdict_y + 70, 'What a DeFade scan reads',
+        heights.append(54 + n * 25)
+    top = 96
+    verdict_y = top + sum(heights) + gap * (len(heights) - 1) + 42
+    card = Card(FULL, verdict_y + 72, 'What a DEFADE scan reads',
                 '34 modules grouped by the six questions they answer, adding up to one rug pull probability from 0 to 100.')
-    frame(card, seed=41, stars=50)
+    frame(card)
     card.add(label(card, pad, 38, 'WHAT A SCAN READS', '34 MODULES · SIX QUESTIONS'))
-    card.add(card.text(pad, 68, 'The rug is not in the contract. It is in the wallets.', 'sansb', 17))
+    card.add(heading(card, pad, 72, 'The rug is not in the contract. It is in the wallets.', 25))
     y = top
     for r, h in enumerate(heights):
         for c in range(cols):
@@ -673,32 +671,33 @@ def modules(dfi):
                 break
             ic, q, _ = QUESTIONS[i]
             x = pad + c * (tw + gap)
-            card.add('<rect x="%s" y="%d" width="%s" height="%d" rx="12" fill="#fff" fill-opacity=".035" stroke="#fff" stroke-opacity=".07"/>' % (_n(x), y, _n(tw), h))
-            card.add(icon(dfi[ic], x + 16, y + 14, 17))
-            card.add(card.text(x + 42, y + 28, q, 'sansb', 14, C['text']))
+            card.add('<rect x="%s" y="%d" width="%s" height="%d" fill="%s" stroke="%s"/>' % (_n(x), y, _n(tw), h, C['bg'], C['line']),
+                     '<rect x="%s" y="%d" width="3" height="%d" fill="%s"/>' % (_n(x), y, h, C['cyan']))
+            card.add(icon(dfi[ic], x + 16, y + 14, 17, C['cyan']))
+            card.add(heading(card, x + 42, y + 30, q, 18))
             for k, row in enumerate(laid[i]):
-                cy = y + 54 + k * 24
+                cy = y + 56 + k * 25
                 for ox, m, w in row:
                     cx = x + 16 + ox
-                    card.add('<rect x="%s" y="%d" width="%s" height="19" rx="9.5" fill="%s" fill-opacity=".08" stroke="%s" stroke-opacity=".22"/>' % (
-                        _n(cx), cy - 13, _n(w), C['cyan'], C['cyan']))
-                    card.add(card.text(cx + 7, cy, m, 'mono', 10, C['dim']))
+                    card.add('<rect x="%s" y="%d" width="%s" height="19" fill="none" stroke="%s" stroke-opacity=".3"/>' % (
+                        _n(cx), cy - 13, _n(w), C['bone']))
+                    card.add(card.text(cx + 7, cy + 1, m, 'mono', 10.5, C['dim']))
         y += h + gap
 
     # The verdict: where every finding lands.
     y = verdict_y
-    card.add(card.text(pad, y, 'ONE NUMBER', 'monob', 10.5, C['purple'], ls=2))
-    card.add(card.text(pad, y + 22, 'Rug pull probability, 0 to 100', 'sansb', 14))
-    card.add(card.text(pad, y + 40, 'and every finding that moved it', 'sans', 11.5, C['faint']))
-    bx, bw = 262, FULL - pad - 262
+    card.add(card.text(pad, y, 'ONE NUMBER', 'monob', 11, C['cyan'], ls=1.6))
+    card.add(heading(card, pad, y + 24, 'Rug pull probability, 0 to 100', 19))
+    card.add(card.text(pad, y + 42, 'and every finding that moved it', 'sans', 12, C['faint']))
+    bx, bw = 300, FULL - pad - 300
     for lo, hi, name, col in BANDS:
         x = bx + bw * lo / 100
         w = bw * (hi - lo + 1) / 100 - 4
-        card.add('<rect x="%s" y="%d" width="%s" height="10" rx="3" fill="%s"/>' % (_n(x), y - 4, _n(w), col))
+        card.add('<rect x="%s" y="%d" width="%s" height="10" fill="%s"/>' % (_n(x), y - 4, _n(w), col))
         words = name.split(' ')
-        card.add(card.text(x, y + 22, words[0], 'monob', 9.5, col, ls=0.4))
-        card.add(card.text(x, y + 35, words[1], 'monob', 9.5, col, ls=0.4))
-        card.add(card.text(x, y + 50, '%d–%d' % (lo, hi), 'mono', 9.5, C['faint']))
+        card.add(card.text(x, y + 24, words[0], 'display', 14, col, ls=0.3))
+        card.add(card.text(x, y + 39, words[1], 'display', 14, col, ls=0.3))
+        card.add(card.text(x, y + 54, '%d–%d' % (lo, hi), 'mono', 10, C['faint']))
     card.save('modules.svg')
 
 
@@ -707,30 +706,34 @@ def modules(dfi):
 PILL_ICONS = {
     'web': '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>',
     'telegram': '<path d="M21 4L3 11l6 2.5M21 4l-3 16-9-6.5M21 4L9 13.5V19l3-3.5"/>',
-    'phone': '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+    'phone': '<rect x="6" y="2.5" width="12" height="19"/><path d="M11 18.5h2"/>',
     'ext': '<path d="M10 3.5a2 2 0 014 0V6h4v4h-1.5a2 2 0 000 4H18v4.5H6V14h1.5a2 2 0 000-4H6V6h4z"/>',
     'api': '<path d="M8 4c-2 0-3 1-3 3v2.5c0 1.2-.8 2.5-2 2.5 1.2 0 2 1.3 2 2.5V17c0 2 1 3 3 3M16 4c2 0 3 1 3 3v2.5c0 1.2.8 2.5 2 2.5-1.2 0-2 1.3-2 2.5V17c0 2-1 3-3 3"/>',
-    'mcp': '<path d="M9 2.5v5M15 2.5v5M6.5 7.5h11V11a5.5 5.5 0 01-11 0zM12 16.5v5"/>',
 }
 
+# The first pill is the site's own SCAN button: solid cyan. The rest are keys
+# outlined on the film.
 PILLS = [
-    ('scan', 'web', 'Scan a token', C['cyan']),
-    ('telegram', 'telegram', 'Telegram bot', C['cyan']),
-    ('apps', 'phone', 'iOS · Android', C['cyan']),
-    ('extension', 'ext', 'Chrome extension', C['purple']),
-    ('api', 'api', 'API · MCP', C['purple']),
+    ('scan', 'web', 'Scan a token', True),
+    ('telegram', 'telegram', 'Telegram bot', False),
+    ('apps', 'phone', 'iOS · Android', False),
+    ('extension', 'ext', 'Chrome extension', False),
+    ('api', 'api', 'API · MCP', False),
 ]
 
 
 def pills():
-    for name, ic, text, col in PILLS:
-        tw = measure(text, 'sansb', 12.5)
-        w, h = int(math.ceil(tw + 48)), 34
+    for name, ic, text, solid in PILLS:
+        t = text.upper()
+        tw = measure(t, 'display', 15, 0.4)
+        w, h = int(math.ceil(tw + 50)), 34
         card = Card(w, h, text, text)
-        card.add('<rect x=".5" y=".5" width="%d" height="%d" rx="%s" fill="%s" stroke="%s" stroke-opacity=".45"/>' % (
-            w - 1, h - 1, _n((h - 1) / 2), C['panel'], col))
-        card.add('<g transform="translate(13 9) scale(.67)" fill="none" stroke="%s" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">%s</g>' % (col, PILL_ICONS[ic]))
-        card.add(card.text(35, 21.5, text, 'sansb', 12.5, C['text']))
+        fg = C['bg'] if solid else C['text']
+        card.add('<rect x=".5" y=".5" width="%d" height="%d" fill="%s" stroke="%s"/>' % (
+            w - 1, h - 1, C['cyan'] if solid else C['film'], C['cyan']))
+        card.add('<g transform="translate(14 9) scale(.67)" fill="none" stroke="%s" stroke-width="2.3" stroke-linecap="square" stroke-linejoin="miter">%s</g>' % (
+            fg if solid else C['cyan'], PILL_ICONS[ic]))
+        card.add(card.text(37, 22.5, t, 'display', 15, fg, ls=0.4))
         card.save('pill-%s.svg' % name)
 
 
@@ -742,16 +745,15 @@ X_MARK = ('M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584
 def byline():
     """The credit under the link pills: built by @dexbuilds, linked to the X account."""
     pre, handle = 'BUILT BY', '@dexbuilds'
-    pw = measure(pre, 'mono', 10, 1.6)
-    hw = measure(handle, 'sansb', 13)
+    pw = measure(pre, 'mono', 10.5, 1.4)
+    hw = measure(handle, 'monob', 13)
     w, h = int(math.ceil(18 + pw + 10 + 14 + 7 + hw + 18)), 32
     card = Card(w, h, 'Built by @dexbuilds', 'Built by @dexbuilds on X')
-    card.add('<rect x=".5" y=".5" width="%d" height="%d" rx="%s" fill="%s" stroke="#fff" stroke-opacity=".16"/>' % (
-        w - 1, h - 1, _n((h - 1) / 2), C['panel']))
-    card.add(card.text(18, 20, pre, 'mono', 10, C['dim'], ls=1.6))
+    card.add('<rect x=".5" y=".5" width="%d" height="%d" fill="%s" stroke="%s"/>' % (w - 1, h - 1, C['film'], C['line']))
+    card.add(card.text(18, 20.5, pre, 'mono', 10.5, C['dim'], ls=1.4))
     x = 18 + pw + 10
     card.add('<path transform="translate(%s 9.5) scale(%s)" fill="%s" d="%s"/>' % (_n(x), _n(13 / 24), C['text'], X_MARK))
-    card.add(card.text(x + 14 + 7, 20.5, handle, 'sansb', 13, C['text']))
+    card.add(card.text(x + 14 + 7, 21, handle, 'monob', 13, C['text']))
     card.save('byline.svg')
 
 
@@ -769,6 +771,11 @@ def live_data(offline):
     if os.path.exists(path):
         with open(path) as f:
             old = json.load(f)
+        # A file written before the cards dropped their counts: keep the
+        # share, drop the counts.
+        tot = old.get('survival', {}).pop('totals', None)
+        if tot and 'shares' not in old['survival']:
+            old['survival']['shares'] = {'ruggedOfFlagged': round(100 * tot['calledIt'] / tot['flagged'], 1)}
     if offline:
         if not old:
             sys.exit('no data/live.json to draw from')
@@ -787,7 +794,7 @@ def live_data(offline):
     now = dt.datetime.now(dt.timezone.utc)
     live = {
         'stamp': now.strftime('%-d %b %Y'),
-        'survival': {'totals': {k: surv['totals'][k] for k in ('tracked', 'flagged', 'calledIt')},
+        'survival': {'shares': {'ruggedOfFlagged': round(100 * surv['totals']['calledIt'] / surv['totals']['flagged'], 1)},
                      'current': {k: surv['current'][k] for k in (
                          'survival_1h', 'survival_6h', 'survival_24h', 'survival_7d', 'survival_30d',
                          'median_lifespan_hours')}},

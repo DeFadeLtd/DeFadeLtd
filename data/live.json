@@ -1,17 +1,15 @@
 {
  "stamp": "2 Nov 2026",
  "survival": {
-  "totals": {
-   "tracked": 92787,
-   "flagged": 82792,
-   "calledIt": 64575
+  "shares": {
+   "ruggedOfFlagged": 78.0
   },
   "current": {
    "survival_1h": 99.3,
    "survival_6h": 90,
    "survival_24h": 60.9,
    "survival_7d": 28.2,
-   "survival_30d": 16.2,
+   "survival_30d": 16.3,
    "median_lifespan_hours": 31.2
   }
  },
@@ -95,18 +93,18 @@
    },
    {
     "activity": 74,
-    "highRisk": 0.347,
+    "highRisk": 0.346,
     "bundled": 0.875
    },
    {
-    "activity": 67,
-    "highRisk": 0.37,
-    "bundled": 0.848
+    "activity": 71,
+    "highRisk": 0.375,
+    "bundled": 0.853
    },
    {
     "activity": 95,
     "highRisk": 0.387,
-    "bundled": 0.871
+    "bundled": 0.866
    },
    {
     "activity": 71,
