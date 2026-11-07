@@ -282,18 +282,45 @@ def load_dfi():
         return json.load(f)
 
 
+# Every launchpad the scan names, by chain, with the logo its header chip
+# wears on defade.org (the Module Guide's launchpad list, img/launchpads/):
+# 50 launchpads on eight chains. Each chain's best known launchpads first.
+LAUNCHPADS = {
+    'solana': ['pump.fun', 'bonk.fun', 'Raydium LaunchLab', 'Meteora DBC', 'boop.fun', 'Jupiter Studio', 'Bags',
+               'Believe', 'Moonit', 'MetaDAO', 'Printr', 'Shipfun', 'StonkFun', 'Launch', 'Float', 'notrandom.fun',
+               'Pangea'],
+    'ethereum': ['Clanker', 'Doppler', 'based.bid', 'Stockereum.fun', 'Pangea'],
+    'base': ['Clanker', 'Zora', 'Flaunch', 'Virtuals', 'Bankr', 'Doppler', 'flap.sh', 'Cracker.fun', 'based.bid',
+             'o1 Launchpad', 'Pangea'],
+    'bsc': ['four.meme', 'flap.sh', 'Genius', 'Clanker', 'Cracker.fun', 'based.bid', 'Pangea'],
+    'robinhood': ['Pons', 'Flywheel', 'FOBO', 'Clank', 'Pools.trade', 'Torch', 'TickUp.fun', 'Zeta.fun', 'Virtuals',
+                  'Clanker', 'Doppler', 'Long.xyz', 'Anoncoin', 'Bankr', 'flap.sh', 'Cracker.fun', 'based.bid',
+                  'o1 Launchpad', 'Pangea'],
+    'arc': ['Argus', 'Tolly', 'Minara.fun', 'ubi.fun', 'Warp', 'Foci', 'Peach', 'Faze', 'based.bid', 'o1 Launchpad'],
+    'hyperevm': ['LiquidLaunch'],
+    'monad': ['nad.fun', 'flap.sh', 'Cracker.fun', 'Doppler'],
+}
+LAUNCHPAD_LOGO = {
+    'Anoncoin': 'anoncoin', 'Argus': 'argus', 'Bags': 'bags', 'Bankr': 'bankr', 'based.bid': 'basedbid',
+    'Believe': 'believe', 'bonk.fun': 'bonkfun', 'boop.fun': 'boopfun', 'Clank': 'clank', 'Clanker': 'clanker',
+    'Cracker.fun': 'cracker', 'Doppler': 'doppler', 'Faze': 'faze', 'flap.sh': 'flapsh', 'Flaunch': 'flaunch',
+    'Float': 'float', 'Flywheel': 'flywheel', 'FOBO': 'fobo', 'Foci': 'foci', 'four.meme': 'fourmeme',
+    'Genius': 'genius', 'Jupiter Studio': 'jupiter-studio', 'Launch': 'launch', 'LiquidLaunch': 'liquidlaunch',
+    'Long.xyz': 'long', 'MetaDAO': 'metadao', 'Meteora DBC': 'meteora', 'Minara.fun': 'minara', 'Moonit': 'moonit',
+    'nad.fun': 'nadfun', 'notrandom.fun': 'notrandom', 'o1 Launchpad': 'o1', 'Pangea': 'pangea', 'Peach': 'peach',
+    'Pons': 'pons', 'Pools.trade': 'poolstrade', 'Printr': 'printr', 'pump.fun': 'pumpfun',
+    'Raydium LaunchLab': 'raydium', 'Shipfun': 'shipfun', 'Stockereum.fun': 'stockereum', 'StonkFun': 'stonkfun',
+    'TickUp.fun': 'tickup', 'Tolly': 'tolly', 'Torch': 'torch', 'ubi.fun': 'ubi', 'Virtuals': 'virtuals',
+    'Warp': 'warp', 'Zeta.fun': 'zetafun', 'Zora': 'zora',
+}
+
 # Chain marks, drawn as the site draws them (js/evm-ui.js); Robinhood and Arc
-# are the site's own PNGs. The launchpads each chain's feed reads.
+# are the site's own PNGs.
 CHAINS = [
-    ('solana', 'Solana', ['pump.fun', 'LaunchLab', 'Meteora DBC', 'Boop', 'MetaDAO']),
-    ('ethereum', 'Ethereum', ['based.bid', 'Clanker', 'Doppler']),
-    ('base', 'Base', ['Clanker', 'Zora', 'Flaunch', 'Virtuals', 'Doppler', 'based.bid', 'o1']),
-    ('bsc', 'BSC', ['four.meme', 'flap.sh', 'Clanker', 'based.bid']),
-    ('robinhood', 'Robinhood', ['Pons', 'Clank.trade', 'Pools.trade', 'Torch', 'Clanker', 'Doppler', 'based.bid', 'o1']),
-    ('arc', 'Arc', ['Argus', 'Tolly', 'Minara', 'ubi.fun', 'Warp', 'Foci', 'Peach', 'Faze', 'based.bid', 'o1']),
-    ('hyperevm', 'Hyperliquid', ['LiquidLaunch']),
-    ('monad', 'Monad', ['nad.fun', 'flap.sh']),
+    ('solana', 'Solana'), ('ethereum', 'Ethereum'), ('base', 'Base'), ('bsc', 'BSC'),
+    ('robinhood', 'Robinhood'), ('arc', 'Arc'), ('hyperevm', 'Hyperliquid'), ('monad', 'Monad'),
 ]
+CHAINS = [(k, n, LAUNCHPADS[k]) for k, n in CHAINS]
 
 
 def chain_mark(key, x, y, size, uid):
@@ -620,6 +647,206 @@ def chains():
     card.save('chains.svg')
 
 
+# ------------------------------------------------------------ launchpads ---
+
+def wrap(s, key, size, width):
+    """s broken into lines no wider than width."""
+    lines, line = [], ''
+    for w in s.split(' '):
+        t = (line + ' ' + w).strip()
+        if line and measure(t, key, size) > width:
+            lines.append(line)
+            line = w
+        else:
+            line = t
+    if line:
+        lines.append(line)
+    return lines
+
+
+def logo(path, x, y, size):
+    return '<image xlink:href="%s" x="%s" y="%s" width="%s" height="%s"/>' % (
+        png_data(path, 48), _n(x), _n(y), _n(size), _n(size))
+
+
+def launchpads():
+    """Every launchpad the scan names, each with the logo its chip wears on the site."""
+    pad, head_w, size = 28, 132, 10.5
+    area = FULL - 2 * pad - head_w - 12
+    logos = {}
+    laid = []
+    for key, name, pads in CHAINS:
+        rows, row, x = [], [], 0
+        for p in pads:
+            w = 8 + 14 + 6 + measure(p, 'mono', size) + 8
+            if row and x + w > area:
+                rows.append(row)
+                row, x = [], 0
+            row.append((x, p, w))
+            x += w + 6
+        rows.append(row)
+        laid.append(rows)
+    heights = [max(44, 14 + len(r) * 26) for r in laid]
+    total = len({p for _, _, ps in CHAINS for p in ps})
+    top = 112
+    card = Card(FULL, top + sum(heights) + 4 * len(heights) + 46, '%d launchpads on %s chains' % (total, CHAIN_WORD[len(CHAINS)].lower()),
+                'Every launchpad a DEFADE scan names, by chain: the chain and the launchpad are read from the address.')
+    frame(card)
+    card.add(label(card, pad, 38, 'LAUNCHPADS', '%d ON %s CHAINS' % (total, CHAIN_WORD[len(CHAINS)])))
+    card.add(heading(card, pad, 70, 'Every launchpad, read off its own contracts', 25))
+    card.add(card.text(pad, 92, 'The scan names where a token came from, and on a bonding curve reads its stage and price from the curve itself.',
+                       'sans', 12, C['faint']))
+    y = top
+    for i, ((key, name, pads), rows, h) in enumerate(zip(CHAINS, laid, heights)):
+        card.add('<rect x="16" y="%d" width="%d" height="%d" fill="%s" fill-opacity="%s"/>' % (
+            y, FULL - 32, h, C['bone'], '.05' if i % 2 == 0 else '0'))
+        card.add(chain_mark(key, pad, y + 11, 20, 'l%d' % i))
+        card.add(card.text(pad + 28, y + 23, name.upper(), 'display', 16, C['text'], ls=0.3))
+        card.add(card.text(pad + 28, y + 36, '%d launchpad%s' % (len(pads), '' if len(pads) == 1 else 's'), 'mono', 9, C['faint']))
+        for k, row in enumerate(rows):
+            cy = y + 9 + k * 26
+            for ox, p, w in row:
+                cx = pad + head_w + 12 + ox
+                card.add('<rect x="%s" y="%d" width="%s" height="21" fill="%s" stroke="%s" stroke-opacity=".28"/>' % (
+                    _n(cx), cy, _n(w), C['bg'], C['bone']))
+                if p not in logos:
+                    logos[p] = 'lp-' + LAUNCHPAD_LOGO[p]
+                    card.defs.append('<image id="%s" xlink:href="%s" width="14" height="14"/>' % (
+                        logos[p], png_data(os.path.join(ROOT, 'src', 'launchpads', LAUNCHPAD_LOGO[p] + '.png'), 28)))
+                card.add('<use xlink:href="#%s" x="%s" y="%d"/>' % (logos[p], _n(cx + 8), cy + 4))
+                card.add(card.text(cx + 28, cy + 14.5, p, 'mono', size, C['dim']))
+        y += h + 4
+    card.add(card.text(pad, y + 20, 'Pangea launches one token on five chains at once; the scan names it on all five.', 'mono', 9.5, C['faint']))
+    card.add(card.text(pad, y + 35, 'A token outside a launchpad is scanned the same way, from its pools.', 'mono', 9.5, C['faint']))
+    card.save('launchpads.svg')
+
+
+# ---------------------------------------------------------- launch tools ---
+
+# The launch tools Bundle Detection names, as the Module Guide describes them
+# (defade.org/modules#launch-tools): the chains each is read on, the mark only
+# its own launches leave, and what it does to the score. Proxima and Sumo are
+# a critical flag on their own; uxento, J7 and RapidLaunch are deployers first,
+# scored only beside a bundle bought in the launch block.
+LAUNCH_TOOLS = [
+    ('proxima', 'Proxima', 'Solana',
+     'Its own program in the launch transactions, or its rotation: a wallet sells and the proceeds pay for another wallet\'s buy in the same block.', True),
+    ('sumo', 'Sumo', 'Solana · EVM chains',
+     'Its launch fee: a fixed share of the supply moved from a bundle wallet to a fresh wallet that sells it for Sumo\'s treasury.', True),
+    ('uxento', 'uxento', 'Solana · Ethereum',
+     'Its fee wallet, paid inside the token\'s own create transaction. On Ethereum, a Stroid launch naming that wallet as partner.', False),
+    ('j7', 'J7', 'Solana · Ethereum · Robinhood',
+     'The token\'s metadata on J7\'s own servers. On Robinhood, a launch sent through J7\'s own launch router.', False),
+    ('rapidlaunch', 'RapidLaunch', 'Solana · Ethereum · Base · BSC · Robinhood',
+     'The token\'s metadata on RapidLaunch\'s own servers, or a launch made through its own launch contracts.', False),
+]
+
+
+def launch_tools():
+    pad, row_h, top = 28, 62, 128
+    card = Card(FULL, top + row_h * len(LAUNCH_TOOLS) + 62, 'Launch tools DEFADE names',
+                'Proxima, Sumo, uxento, J7 and RapidLaunch: the launch tools a DEFADE scan names, each off a mark only its own launches leave.')
+    frame(card)
+    card.add(label(card, pad, 38, 'LAUNCH TOOLS', 'NAMED ON PROOF · EVERY CHAIN'))
+    card.add(heading(card, pad, 70, 'Launched with a bundler? The scan says which one.', 25))
+    card.add(card.text(pad, 92, 'Software that creates a token and buys it from a fleet of wallets in the same moment. A tag above the', 'sans', 12, C['faint']))
+    card.add(card.text(pad, 108, 'token\'s name reads "launched with" and the tool, and Bundle Detection says the same.', 'sans', 12, C['faint']))
+    sx, sw = 280, 320
+    for i, (key, name, chains_, sign, critical) in enumerate(LAUNCH_TOOLS):
+        y = top + i * row_h
+        card.add('<rect x="16" y="%d" width="%d" height="%d" fill="%s" fill-opacity="%s"/>' % (
+            y, FULL - 32, row_h - 4, C['bone'], '.05' if i % 2 == 0 else '0'))
+        card.add('<rect x="%d" y="%d" width="34" height="34" fill="%s" stroke="%s"/>' % (pad, y + 11, C['bg'], C['line']))
+        card.add(logo(os.path.join(ROOT, 'src', 'launch-tools', key + '.png'), pad + 3, y + 14, 28))
+        cl = wrap(chains_, 'mono', 9.5, sx - pad - 46 - 14)
+        ny = y + 28 - (len(cl) - 1) * 6
+        card.add(card.text(pad + 46, ny, name.upper(), 'display', 20, C['text'], ls=0.3))
+        for k, ln in enumerate(cl):
+            card.add(card.text(pad + 46, ny + 16 + k * 12, ln, 'mono', 9.5, C['dim']))
+        lines = wrap(sign, 'sans', 11.5, sw)
+        for k, ln in enumerate(lines[:3]):
+            card.add(card.text(sx, y + 22 + k * 15 - (len(lines) - 2) * 7, ln, 'sans', 11.5, C['dim']))
+        col = C['red'] if critical else C['amber']
+        top_line, low_line = ('CRITICAL FLAG', 'on its own') if critical else ('SCORED WITH', 'a launch-block bundle')
+        bx = FULL - pad - 130
+        card.add('<rect x="%d" y="%d" width="130" height="38" fill="%s" fill-opacity=".1" stroke="%s" stroke-width="1.5"/>' % (bx, y + 10, col, col))
+        card.add(card.text(bx + 10, y + 27, top_line, 'display', 15, col, ls=0.3))
+        card.add(card.text(bx + 10, y + 41, low_line, 'mono', 9, col))
+    y = top + row_h * len(LAUNCH_TOOLS)
+    card.add(card.text(pad, y + 20, 'Never named on a guess: a tool is named off its program, its fee, its launch contract or its metadata server.', 'mono', 9.5, C['faint']))
+    card.add(card.text(pad, y + 36, 'On Pro, the wallets that ran it carry its name, and wallets seen in its fleet before are flagged as known bundlers.', 'mono', 9.5, C['faint']))
+    card.save('launch-tools.svg')
+
+
+# ---------------------------------------------------------------- memory ---
+
+MEMORY_KEPT = [
+    ('bundle', 'Bundlers', 'every wallet caught in a launch bundle'),
+    ('sniper', 'Snipers', 'kept, never held against a wallet alone'),
+    ('freshwallet', 'Fresh wallets', 'under a week old when seen holding'),
+    ('network', 'Insiders', 'top holders moving value to each other'),
+    ('money', 'Funders', 'who seeded several holders of one token'),
+    ('bubbles', 'Operator bands', 'wallets tied by the same private funders'),
+    ('creator', 'Token creators', 'with the wallet that first funded them'),
+    ('rocket', 'Launch tool fleets', 'the bundler wallets behind each tool'),
+]
+MEMORY_READERS = ['Wallet Reputation', 'Exit Playbook', 'Crew Radar', 'Operator history in the score', 'Wallet Lookup']
+MEMORY_RULES = [
+    ('A sniper is not an operator.', 'Bots hit everything; a repeat offender bundled, funded or was an insider on an earlier rug.'),
+    ('An exchange is not a funder.', 'Shared exchanges, bridges and payout services never link wallets together.'),
+    ('Unknown is not clean.', 'A wallet we have never seen is exactly that, and the cards say so.'),
+]
+
+
+def memory(dfi):
+    pad, top = 28, 118
+    card = Card(FULL, 470, 'DEFADE Memory',
+                'Every scan is kept: bundlers, snipers, fresh wallets, insiders, funders, operator bands, token creators and launch tool '
+                'fleets. When a token later rugs, every wallet on it is marked, so known hands are flagged before they act.')
+    frame(card)
+    card.add(label(card, pad, 38, 'DEFADE MEMORY', 'EVERY SCAN KEPT'))
+    card.add(heading(card, pad, 70, 'Have we seen these hands before?', 25))
+    card.add(card.text(pad, 92, 'Rug crews rotate tokens faster than they rotate wallets, funders and habits. Every scan is kept, so a', 'sans', 12, C['faint']))
+    card.add(card.text(pad, 108, 'wallet can be flagged before it does anything on this token, and the memory grows with every scan.', 'sans', 12, C['faint']))
+
+    # Left: what a scan leaves behind, two columns of films.
+    cw, ch, gap = 228, 46, 8
+    for i, (ic, name, note) in enumerate(MEMORY_KEPT):
+        x = pad + (i % 2) * (cw + gap)
+        y = top + 14 + (i // 2) * (ch + gap)
+        card.add('<g>',
+                 '<rect x="%d" y="%d" width="%d" height="%d" fill="%s" stroke="%s"/>' % (x, y, cw, ch, C['bg'], C['line']),
+                 '<rect x="%d" y="%d" width="3" height="%d" fill="%s"/>' % (x, y, ch, C['cyan']),
+                 icon(dfi[ic], x + 12, y + 8, 16, C['cyan']),
+                 card.text(x + 36, y + 21, name.upper(), 'display', 15, C['text'], ls=0.3),
+                 card.text(x + 12, y + 38, note, 'mono', 9, C['dim']),
+                 '</g>')
+    y = top + 14 + 4 * (ch + gap)
+    card.add('<rect x="%d" y="%d" width="%d" height="40" fill="%s" fill-opacity=".08" stroke="%s"/>' % (pad, y, 2 * cw + gap, C['red'], C['red']))
+    card.add(icon(dfi['skull'], pad + 12, y + 11, 17, C['red']))
+    card.add(card.text(pad + 38, y + 18, 'THE OUTCOME', 'display', 15, C['red'], ls=0.3))
+    card.add(card.text(pad + 38, y + 32, 'when a token later rugs, every wallet on it is marked', 'mono', 9.5, C['text']))
+
+    # Right: who reads it, and the three rules that keep it fair.
+    rx = pad + 2 * cw + gap + 26
+    rw = FULL - pad - rx
+    card.add('<rect x="%d" y="%d" width="1" height="%d" fill="%s"/>' % (rx - 13, top + 14, 4 * (ch + gap) + 40, C['line']))
+    card.add(card.text(rx, top + 26, 'READ BY', 'monob', 10.5, C['cyan'], ls=1.6))
+    for k, r in enumerate(MEMORY_READERS):
+        yy = top + 46 + k * 18
+        card.add('<rect x="%d" y="%d" width="5" height="5" fill="%s"/>' % (rx, yy - 6, C['cyan']))
+        card.add(card.text(rx + 13, yy, r, 'mono', 10.5, C['text']))
+    yy = top + 46 + len(MEMORY_READERS) * 18 + 16
+    card.add(card.text(rx, yy, 'KEPT FAIR', 'monob', 10.5, C['cyan'], ls=1.6))
+    yy += 20
+    for head, body in MEMORY_RULES:
+        card.add(card.text(rx, yy, head.upper(), 'display', 14, C['text'], ls=0.3))
+        for k, ln in enumerate(wrap(body, 'sans', 10.5, rw)):
+            card.add(card.text(rx, yy + 15 + k * 13, ln, 'sans', 10.5, C['faint']))
+        yy += 15 + len(wrap(body, 'sans', 10.5, rw)) * 13 + 8
+    card.save('memory.svg')
+
+
 # --------------------------------------------------------------- modules ---
 
 QUESTIONS = [
@@ -819,6 +1046,9 @@ def main():
     if not args.live_only:
         hero(dfi)
         chains()
+        launchpads()
+        launch_tools()
+        memory(dfi)
         modules(dfi)
         pills()
         byline()
