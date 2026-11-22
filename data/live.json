@@ -1,8 +1,8 @@
 {
- "stamp": "21 Nov 2026",
+ "stamp": "22 Nov 2026",
  "survival": {
   "shares": {
-   "ruggedOfFlagged": 78.2
+   "ruggedOfFlagged": 78.3
   },
   "current": {
    "survival_1h": 99.3,
@@ -17,124 +17,124 @@
   "days": 30,
   "hourOfDay": [
    {
-    "activity": 72,
-    "highRisk": 0.383,
-    "bundled": 0.845
-   },
-   {
-    "activity": 69,
-    "highRisk": 0.415,
-    "bundled": 0.869
-   },
-   {
-    "activity": 62,
-    "highRisk": 0.425,
-    "bundled": 0.881
-   },
-   {
-    "activity": 100,
-    "highRisk": 0.15,
-    "bundled": 0.602
-   },
-   {
-    "activity": 56,
-    "highRisk": 0.268,
-    "bundled": 0.857
-   },
-   {
-    "activity": 51,
-    "highRisk": 0.415,
-    "bundled": 0.907
-   },
-   {
-    "activity": 40,
-    "highRisk": 0.328,
-    "bundled": 0.872
-   },
-   {
-    "activity": 40,
-    "highRisk": 0.387,
-    "bundled": 0.897
-   },
-   {
-    "activity": 39,
-    "highRisk": 0.36,
-    "bundled": 0.869
-   },
-   {
-    "activity": 46,
-    "highRisk": 0.355,
-    "bundled": 0.899
-   },
-   {
-    "activity": 53,
-    "highRisk": 0.344,
-    "bundled": 0.879
-   },
-   {
-    "activity": 56,
-    "highRisk": 0.369,
-    "bundled": 0.864
-   },
-   {
-    "activity": 66,
-    "highRisk": 0.342,
-    "bundled": 0.843
-   },
-   {
-    "activity": 58,
-    "highRisk": 0.391,
-    "bundled": 0.841
-   },
-   {
     "activity": 74,
-    "highRisk": 0.358,
-    "bundled": 0.868
-   },
-   {
-    "activity": 84,
-    "highRisk": 0.391,
-    "bundled": 0.87
-   },
-   {
-    "activity": 89,
-    "highRisk": 0.351,
-    "bundled": 0.824
+    "highRisk": 0.361,
+    "bundled": 0.838
    },
    {
     "activity": 68,
-    "highRisk": 0.326,
+    "highRisk": 0.391,
+    "bundled": 0.863
+   },
+   {
+    "activity": 61,
+    "highRisk": 0.407,
+    "bundled": 0.895
+   },
+   {
+    "activity": 100,
+    "highRisk": 0.144,
+    "bundled": 0.6
+   },
+   {
+    "activity": 56,
+    "highRisk": 0.261,
+    "bundled": 0.858
+   },
+   {
+    "activity": 51,
+    "highRisk": 0.422,
+    "bundled": 0.917
+   },
+   {
+    "activity": 40,
+    "highRisk": 0.336,
+    "bundled": 0.875
+   },
+   {
+    "activity": 40,
+    "highRisk": 0.384,
+    "bundled": 0.898
+   },
+   {
+    "activity": 38,
+    "highRisk": 0.368,
+    "bundled": 0.869
+   },
+   {
+    "activity": 45,
+    "highRisk": 0.357,
+    "bundled": 0.902
+   },
+   {
+    "activity": 53,
+    "highRisk": 0.357,
+    "bundled": 0.885
+   },
+   {
+    "activity": 57,
+    "highRisk": 0.371,
+    "bundled": 0.865
+   },
+   {
+    "activity": 66,
+    "highRisk": 0.339,
     "bundled": 0.849
    },
    {
-    "activity": 73,
-    "highRisk": 0.393,
-    "bundled": 0.86
+    "activity": 57,
+    "highRisk": 0.377,
+    "bundled": 0.845
    },
    {
-    "activity": 71,
-    "highRisk": 0.419,
+    "activity": 73,
+    "highRisk": 0.357,
     "bundled": 0.867
    },
    {
-    "activity": 65,
-    "highRisk": 0.396,
-    "bundled": 0.831
+    "activity": 83,
+    "highRisk": 0.391,
+    "bundled": 0.875
    },
    {
-    "activity": 58,
-    "highRisk": 0.447,
-    "bundled": 0.883
+    "activity": 88,
+    "highRisk": 0.346,
+    "bundled": 0.825
    },
    {
-    "activity": 50,
-    "highRisk": 0.349,
+    "activity": 67,
+    "highRisk": 0.314,
+    "bundled": 0.85
+   },
+   {
+    "activity": 72,
+    "highRisk": 0.388,
     "bundled": 0.864
    },
    {
-    "activity": 50,
+    "activity": 70,
+    "highRisk": 0.412,
+    "bundled": 0.873
+   },
+   {
+    "activity": 64,
+    "highRisk": 0.393,
+    "bundled": 0.845
+   },
+   {
+    "activity": 57,
+    "highRisk": 0.44,
+    "bundled": 0.894
+   },
+   {
+    "activity": 48,
+    "highRisk": 0.325,
+    "bundled": 0.864
+   },
+   {
+    "activity": 49,
     "highRisk": 0.255,
-    "bundled": 0.859
+    "bundled": 0.855
    }
   ]
  }
