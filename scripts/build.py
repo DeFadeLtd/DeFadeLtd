@@ -389,7 +389,7 @@ def brand_mark(card, x, y, size):
 
 
 def hero(dfi):
-    card = Card(FULL, 330, 'DEFADE, the multi-chain memecoin analyzer',
+    card = Card(FULL, 330, 'DEFADE, the multi-chain token analyzer',
                 'See through the token. A scan reads a token and lands on a rug pull probability.')
     frame(card)
 
@@ -411,7 +411,7 @@ def hero(dfi):
         card.add(chain_mark(key, x, 262, 16, 'h%d' % i))
         x += 23
     card.add(card.text(x + 6, 275, '%s CHAINS' % CHAIN_WORD[len(CHAINS)], 'mono', 11, C['faint'], ls=1.4))
-    card.add(card.text(32, 306, 'MULTI-CHAIN MEMECOIN ANALYZER', 'mono', 10.5, C['faint'], ls=1.6))
+    card.add(card.text(32, 306, 'MULTI-CHAIN TOKEN ANALYZER', 'mono', 10.5, C['faint'], ls=1.6))
 
     # Right: a scan running, on the lightbox. The contract is clean, the wallets are not.
     x0, y0, pw, ph = 398, 22, 360, 290
@@ -491,7 +491,7 @@ def pulse(live):
     cur = live['survival']['current']
     share = live['survival']['shares']['ruggedOfFlagged']
     card = Card(FULL, 280, 'DEFADE live: rugged after our flag',
-                'The share of the tokens DEFADE flagged that collapsed later, and how many memecoins are still '
+                'The share of the tokens DEFADE flagged that collapsed later, and how many tokens are still '
                 'alive after an hour, a day, a week and a month.')
     frame(card)
     card.css.append('@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}.live{animation:pulse 1.6s ease-in-out infinite}')
@@ -519,8 +519,8 @@ def pulse(live):
            ('24 h', cur['survival_24h']), ('7 d', cur['survival_7d']), ('30 d', cur['survival_30d'])]
     month = int(round(float(cur['survival_30d'])))
     card.add(card.spans(394, 84, [('%d IN 100' % month, C['cyan'], None),
-                                  (' MEMECOINS ARE ALIVE AFTER A MONTH', C['text'], None)], 'display', 19, ls=0.2))
-    card.add(card.text(394, 104, 'Half are dead within %s hours. Every memecoin the' % _n(round(float(cur['median_lifespan_hours']))),
+                                  (' TOKENS ARE ALIVE AFTER A MONTH', C['text'], None)], 'display', 19, ls=0.2))
+    card.add(card.text(394, 104, 'Half are dead within %s hours. Every token the' % _n(round(float(cur['median_lifespan_hours']))),
                        'sans', 12, C['faint']))
     card.add(card.text(394, 120, 'Survival Tracker follows, from launch.', 'sans', 12, C['faint']))
     left, right, top, bottom = 424, 742, 150, 236

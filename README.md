@@ -1,4 +1,4 @@
-<a href="https://defade.org"><img src="assets/hero.svg" width="100%" alt="DEFADE, the multi-chain memecoin analyzer, on nine chains. See through the token."></a>
+<a href="https://defade.org"><img src="assets/hero.svg" width="100%" alt="DEFADE, the multi-chain token analyzer, on nine chains. See through the token."></a>
 
 <p align="center">
   <a href="https://defade.org"><img src="assets/pill-scan.svg" height="34" alt="Scan a token on defade.org"></a>
@@ -12,7 +12,7 @@
   <a href="https://x.com/dexbuilds"><img src="assets/byline.svg" height="32" alt="Built by @dexbuilds on X"></a>
 </p>
 
-<a href="https://defade.org/survival"><img src="assets/pulse.svg" width="100%" alt="Live from defade.org: the share of the tokens DEFADE flagged that rugged after the flag, and the survival curve of every memecoin it follows."></a>
+<a href="https://defade.org/survival"><img src="assets/pulse.svg" width="100%" alt="Live from defade.org: the share of the tokens DEFADE flagged that rugged after the flag, and the survival curve of every token it follows."></a>
 
 <a href="https://defade.org/heatmap"><img src="assets/rug-clock.svg" width="49.5%" alt="Rug Clock: scan activity and the share of new tokens scored high risk, for each hour of the day."></a>
 <a href="https://defade.org/whitepaper"><img src="assets/chains.svg" width="49.5%" alt="Nine chains and their launchpads, every module on every chain."></a>
