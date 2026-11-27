@@ -1,4 +1,4 @@
-<a href="https://defade.org"><img src="assets/hero.svg" width="100%" alt="DEFADE, the multi-chain memecoin analyzer. See through the token."></a>
+<a href="https://defade.org"><img src="assets/hero.svg" width="100%" alt="DEFADE, the multi-chain memecoin analyzer, on nine chains. See through the token."></a>
 
 <p align="center">
   <a href="https://defade.org"><img src="assets/pill-scan.svg" height="34" alt="Scan a token on defade.org"></a>
@@ -15,15 +15,15 @@
 <a href="https://defade.org/survival"><img src="assets/pulse.svg" width="100%" alt="Live from defade.org: the share of the tokens DEFADE flagged that rugged after the flag, and the survival curve of every memecoin it follows."></a>
 
 <a href="https://defade.org/heatmap"><img src="assets/rug-clock.svg" width="49.5%" alt="Rug Clock: scan activity and the share of new tokens scored high risk, for each hour of the day."></a>
-<a href="https://defade.org/whitepaper"><img src="assets/chains.svg" width="49.5%" alt="Eight chains and their launchpads, every module on every chain."></a>
+<a href="https://defade.org/whitepaper"><img src="assets/chains.svg" width="49.5%" alt="Nine chains and their launchpads, every module on every chain."></a>
 
-<a href="https://defade.org/modules#launchpads"><img src="assets/launchpads.svg" width="100%" alt="50 launchpads on eight chains, each read off its own contracts: pump.fun, bonk.fun, Raydium LaunchLab, Meteora DBC, boop.fun, Jupiter Studio, Bags, Believe, Moonit, MetaDAO, Printr, Shipfun, StonkFun, Launch, Float, notrandom.fun, Pangea, Clanker, Doppler, based.bid, Stockereum.fun, Zora, Flaunch, Virtuals, Bankr, flap.sh, Cracker.fun, o1 Launchpad, four.meme, Genius, Pons, Flywheel, FOBO, Clank, Pools.trade, Torch, TickUp.fun, Zeta.fun, Long.xyz, Anoncoin, Argus, Tolly, Minara.fun, ubi.fun, Warp, Foci, Peach, Faze, LiquidLaunch and nad.fun."></a>
+<a href="https://defade.org/modules#launchpads"><img src="assets/launchpads.svg" width="100%" alt="63 launchpads on nine chains, each read off its own contracts: pump.fun, bonk.fun, Raydium LaunchLab, Meteora DBC, boop.fun, Jupiter Studio, Bags, Believe, Moonit, MetaDAO, Printr, Shipfun, StonkFun, Launch, Float, notrandom.fun, Pangea, 1EDGE, Clanker, Doppler, based.bid, Stockereum.fun, Zora, Flaunch, Virtuals, Bankr, flap.sh, Cracker.fun, o1 Launchpad, four.meme, Genius, Pons, Flywheel, FOBO, Clank.trade, Pools.trade, Torch, TickUp.fun, Zeta.fun, QHooks, Long.xyz, Anoncoin, Argus, Tolly, Minara.fun, ubi.fun, Warp, Foci, Peach, Faze, LiquidLaunch, nad.fun, Montra, Ascend, Mainnet Fun, Mesa, Kleos, ElysPump, Boxa, Forge, BunnyPad, aka.fun and CatPad."></a>
 
-<a href="https://defade.org/modules#launch-tools"><img src="assets/launch-tools.svg" width="100%" alt="Launch tools the scan names, each off a mark only its own launches leave: Proxima and Sumo, a critical flag on their own; uxento, J7 and RapidLaunch, scored beside a launch-block bundle."></a>
+<a href="https://defade.org/modules#launch-tools"><img src="assets/launch-tools.svg" width="100%" alt="Launch tools the scan names, each off a mark only its own launches leave: Proxima and Sumo, a critical flag on their own; uxento, J7, RapidLaunch and Rugpad, scored beside a launch-block bundle."></a>
 
 <a href="https://defade.org/blog/defade-memory"><img src="assets/memory.svg" width="100%" alt="DEFADE Memory: every scan keeps the bundlers, snipers, fresh wallets, insiders, funders, operator bands, token creators and launch tool fleets, and marks every wallet on a token that later rugs."></a>
 
-<a href="https://defade.org/modules"><img src="assets/modules.svg" width="100%" alt="What a scan reads: 34 modules grouped by six questions, adding up to one rug pull probability from 0 to 100."></a>
+<a href="https://defade.org/modules"><img src="assets/modules.svg" width="100%" alt="What a scan reads: 36 modules grouped by six questions, adding up to one rug pull probability from 0 to 100."></a>
 
 ### Build on DEFADE
 
