@@ -115,25 +115,6 @@ def font_face(key, chars):
             'src:url(data:font/woff2;base64,%s) format("woff2")}' % (key, FONTS[key][2], data))
 
 
-def word_path(s, key, x, y, width):
-    """s as outlines, its advance stretched to width: the wordmark needs no
-    font to load and can clip the hatching inside its letters."""
-    from fontTools.pens.svgPathPen import SVGPathPen
-    from fontTools.pens.transformPen import TransformPen
-    tt = TTFont(font_path(key))
-    gs, cmap, upm = tt.getGlyphSet(), tt.getBestCmap(), tt['head'].unitsPerEm
-    adv = sum(tt['hmtx'][cmap[ord(ch)]][0] for ch in s)
-    k = width / adv
-    out, cx = [], 0
-    for ch in s:
-        name = cmap[ord(ch)]
-        pen = SVGPathPen(gs)
-        gs[name].draw(TransformPen(pen, (k, 0, 0, -k, x + cx * k, y)))
-        out.append(pen.getCommands())
-        cx += tt['hmtx'][name][0]
-    return ' '.join(out), adv * k, (tt['OS/2'].sCapHeight or upm * 0.7) * k
-
-
 # ---------------------------------------------------------------- cards ---
 
 def esc(s):
@@ -284,25 +265,30 @@ def load_dfi():
 
 # Every launchpad the scan names, by chain, with the logo its header chip
 # wears on defade.org (the Module Guide's launchpad list, img/launchpads/):
-# 50 launchpads on eight chains. Each chain's best known launchpads first.
+# 63 launchpads on nine chains. Each chain's best known launchpads first.
 LAUNCHPADS = {
     'solana': ['pump.fun', 'bonk.fun', 'Raydium LaunchLab', 'Meteora DBC', 'boop.fun', 'Jupiter Studio', 'Bags',
                'Believe', 'Moonit', 'MetaDAO', 'Printr', 'Shipfun', 'StonkFun', 'Launch', 'Float', 'notrandom.fun',
-               'Pangea'],
+               'Pangea', '1EDGE'],
     'ethereum': ['Clanker', 'Doppler', 'based.bid', 'Stockereum.fun', 'Pangea'],
     'base': ['Clanker', 'Zora', 'Flaunch', 'Virtuals', 'Bankr', 'Doppler', 'flap.sh', 'Cracker.fun', 'based.bid',
              'o1 Launchpad', 'Pangea'],
     'bsc': ['four.meme', 'flap.sh', 'Genius', 'Clanker', 'Cracker.fun', 'based.bid', 'Pangea'],
-    'robinhood': ['Pons', 'Flywheel', 'FOBO', 'Clank', 'Pools.trade', 'Torch', 'TickUp.fun', 'Zeta.fun', 'Virtuals',
-                  'Clanker', 'Doppler', 'Long.xyz', 'Anoncoin', 'Bankr', 'flap.sh', 'Cracker.fun', 'based.bid',
-                  'o1 Launchpad', 'Pangea'],
-    'arc': ['Argus', 'Tolly', 'Minara.fun', 'ubi.fun', 'Warp', 'Foci', 'Peach', 'Faze', 'based.bid', 'o1 Launchpad'],
+    'robinhood': ['Pons', 'Flywheel', 'FOBO', 'Clank.trade', 'Pools.trade', 'Torch', 'TickUp.fun', 'Zeta.fun', 'QHooks',
+                  'Virtuals', 'Clanker', 'Doppler', 'Long.xyz', 'Anoncoin', 'Bankr', 'flap.sh', 'Cracker.fun',
+                  'based.bid', 'o1 Launchpad', 'Pangea', '1EDGE'],
+    'arc': ['Argus', 'Tolly', 'Minara.fun', 'ubi.fun', 'Warp', 'Foci', 'Peach', 'Faze', 'based.bid', 'o1 Launchpad',
+            '1EDGE'],
     'hyperevm': ['LiquidLaunch'],
     'monad': ['nad.fun', 'flap.sh', 'Cracker.fun', 'Doppler'],
+    'elysium': ['Montra', 'Ascend', 'Mainnet Fun', 'Mesa', 'Kleos', 'ElysPump', 'Clanker', 'Boxa', 'Forge', 'BunnyPad',
+                'aka.fun', 'CatPad'],
 }
 LAUNCHPAD_LOGO = {
-    'Anoncoin': 'anoncoin', 'Argus': 'argus', 'Bags': 'bags', 'Bankr': 'bankr', 'based.bid': 'basedbid',
-    'Believe': 'believe', 'bonk.fun': 'bonkfun', 'boop.fun': 'boopfun', 'Clank': 'clank', 'Clanker': 'clanker',
+    '1EDGE': '1edge', 'aka.fun': 'akafun', 'Anoncoin': 'anoncoin', 'Ascend': 'ascend', 'Boxa': 'boxa',
+    'BunnyPad': 'bunnypad', 'CatPad': 'catpad', 'ElysPump': 'elyspump', 'Forge': 'forge', 'Kleos': 'kleos',
+    'Mainnet Fun': 'mainnetfun', 'Mesa': 'mesa', 'Montra': 'montra', 'QHooks': 'qhooks', 'Argus': 'argus', 'Bags': 'bags', 'Bankr': 'bankr', 'based.bid': 'basedbid',
+    'Believe': 'believe', 'bonk.fun': 'bonkfun', 'boop.fun': 'boopfun', 'Clank.trade': 'clank', 'Clanker': 'clanker',
     'Cracker.fun': 'cracker', 'Doppler': 'doppler', 'Faze': 'faze', 'flap.sh': 'flapsh', 'Flaunch': 'flaunch',
     'Float': 'float', 'Flywheel': 'flywheel', 'FOBO': 'fobo', 'Foci': 'foci', 'four.meme': 'fourmeme',
     'Genius': 'genius', 'Jupiter Studio': 'jupiter-studio', 'Launch': 'launch', 'LiquidLaunch': 'liquidlaunch',
@@ -314,11 +300,12 @@ LAUNCHPAD_LOGO = {
     'Warp': 'warp', 'Zeta.fun': 'zetafun', 'Zora': 'zora',
 }
 
-# Chain marks, drawn as the site draws them (js/evm-ui.js); Robinhood and Arc
-# are the site's own PNGs.
+# Chain marks, drawn as the site draws them (js/evm-ui.js); Robinhood, Arc and
+# Elysium are the site's own PNGs (img/chains/).
 CHAINS = [
     ('solana', 'Solana'), ('ethereum', 'Ethereum'), ('base', 'Base'), ('bsc', 'BSC'),
     ('robinhood', 'Robinhood'), ('arc', 'Arc'), ('hyperevm', 'Hyperliquid'), ('monad', 'Monad'),
+    ('elysium', 'Elysium'),
 ]
 CHAINS = [(k, n, LAUNCHPADS[k]) for k, n in CHAINS]
 
@@ -342,7 +329,7 @@ def chain_mark(key, x, y, size, uid):
     if key == 'monad':
         # The mark the site draws for Monad (js/evm-ui.js).
         return g + ('<circle cx="12" cy="12" r="11.2" fill="#836EF9"/><path fill="#fff" fill-rule="evenodd" d="M12 5.4C10.09 5.4 5.4 10.09 5.4 12C5.4 13.91 10.09 18.6 12 18.6C13.91 18.6 18.6 13.91 18.6 12C18.6 10.09 13.91 5.4 12 5.4ZM10.97 15.77C10.17 15.56 8.01 11.78 8.23 10.97C8.44 10.17 12.22 8.01 13.03 8.23C13.83 8.44 15.99 12.22 15.77 13.03C15.56 13.83 11.78 15.99 10.97 15.77Z"/></g>')
-    # Robinhood and Arc: the site's PNG marks.
+    # Robinhood, Arc and Elysium: the site's PNG marks.
     data = png_data(os.path.join(ROOT, 'src', key + '.png'), 64)
     return '<image xlink:href="%s" x="%s" y="%s" width="%s" height="%s"/>' % (data, _n(x), _n(y), _n(size), _n(size))
 
@@ -358,23 +345,47 @@ CHAIN_WORD = ['NO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGH
 FULL, HALF = 780, 386
 
 
-def wordmark(card, x, y, width, uid):
-    """DEFADE under the scan line, as the homepage draws it (js/ui-xray.js
-    markSvg): solid and faint above the line, outlined and hatched below."""
-    d, w, cap = word_path('DEFADE', 'display', x, y, width)
-    top = y - cap
-    scan = top + cap * 0.62
-    card.defs.append('<clipPath id="wt%s"><rect x="0" y="0" width="%d" height="%s"/></clipPath>'
-                     '<clipPath id="wb%s"><rect x="0" y="%s" width="%d" height="%d"/></clipPath>'
-                     '<clipPath id="ww%s"><path d="%s"/></clipPath>' % (uid, card.w, _n(scan), uid, _n(scan), card.w, card.h, uid, d))
-    hatch = ''.join('<line x1="%s" y1="%s" x2="%s" y2="%s"/>' % (_n(hx), _n(scan + 3), _n(hx + 3), _n(y + 2))
-                    for hx in [x + i * 8.5 for i in range(int(w / 8.5) + 2)])
-    card.add('<g clip-path="url(#wt%s)"><path d="%s" fill="%s" fill-opacity=".16"/></g>' % (uid, d, C['cyan']),
-             '<g clip-path="url(#wb%s)"><path d="%s" fill="none" stroke="%s" stroke-opacity=".55" stroke-width="1.2"/>'
-             '<g clip-path="url(#ww%s)" stroke="%s" stroke-opacity=".3" stroke-width="2">%s</g></g>' % (uid, d, C['cyan'], uid, C['bone'], hatch),
-             '<rect x="%s" y="%s" width="%s" height="9" fill="%s" fill-opacity=".1"/>' % (_n(x - 8), _n(scan - 4.5), _n(w + 16), C['cyan']),
-             '<rect x="%s" y="%s" width="%s" height="2" fill="%s"/>' % (_n(x - 8), _n(scan - 1), _n(w + 16), C['cyan']))
-    return top, w
+# The DEFADE lettering: the designer's own shapes (brand/wordmark.svg on
+# defade.org), in the designer's coordinates, as the site's title and the
+# server's pictures draw it. BOX is their bounds.
+WORDMARK_BOX = (392.28, 472.29, 350.72, 55.42)
+WORDMARK = [
+    'M393.141 527.414V497.317H406.699V514.873H408.812C414.314 514.873 419.817 514.738 425.319 514.873C432.912 515.069 439.103 508.878 438.651 498.935C438.324 491.775 434.55 486.761 428.822 485.229C427.76 484.981 426.675 484.874 425.59 484.91C415.045 484.91 404.526 484.91 394.033 484.91H392.282V472.54C392.724 472.461 393.169 472.408 393.615 472.381C404.914 472.381 416.212 472.16 427.511 472.442C437.94 472.699 445.826 477.983 450.368 488.281C452.206 492.382 453.068 496.918 452.875 501.473C452.683 506.028 451.442 510.459 449.265 514.36C447.089 518.261 444.047 521.509 440.417 523.806C436.786 526.104 432.684 527.378 428.483 527.513C416.947 527.88 405.4 527.598 393.853 527.598C393.717 527.537 393.559 527.476 393.141 527.414Z',
+    'M631.867 527.549V497.329H644.51V514.75C645.335 514.75 645.99 514.848 646.634 514.848H661.142C667.65 514.848 672.214 511.109 673.819 504.268C674.528 501.635 674.6 498.848 674.026 496.176C673.452 493.504 672.252 491.038 670.542 489.017C669.485 487.699 668.171 486.652 666.696 485.95C665.221 485.248 663.621 484.91 662.012 484.959H631.89V472.491C632.613 472.491 633.302 472.393 634.003 472.393H662.249C666.064 472.351 669.838 473.249 673.288 475.018C676.737 476.787 679.772 479.381 682.165 482.606C684.557 485.831 686.245 489.602 687.1 493.637C687.956 497.671 687.958 501.864 687.106 505.899C684.428 519.164 674.802 527.549 662.249 527.549H631.867Z',
+    'M585.092 472.442H599.339C608.706 490.574 618.129 508.841 627.71 527.402H613.598C606.582 513.671 599.486 499.756 592.21 485.498L570.946 527.439H556.789C566.314 508.914 575.714 490.66 585.092 472.442Z',
+    'M738.807 493.982V505.813H707.782V514.787H742.999V527.414H695.003V493.982H738.807Z',
+    'M460.22 527.365V494.044H504.001V505.825H473.055V514.824H508.08V527.365H460.22Z',
+    'M516.43 527.378V494.044H558.065V505.85H529.615V527.378H516.43Z',
+    'M460.22 472.479H507.21V484.738H460.22V472.479Z',
+    'M695.015 472.491H742.118V484.751H695.015V472.491Z',
+    'M516.441 472.491H560.98V484.751H516.441V472.491Z',
+    'M577.849 527.378L583.905 514.958H600.649L606.784 527.378H577.849Z',
+]
+
+
+def wordmark(card, x, y, width):
+    """The DEFADE lettering in the brand cyan, width wide, standing on y, as
+    the brand's lockups set it."""
+    bx, by, bw, bh = WORDMARK_BOX
+    k = width / bw
+    tf = 'matrix(%s 0 0 %s %s %s)' % (_n(k), _n(k), _n(x - bx * k), _n(y - bh * k - by * k))
+    return '<g fill="%s">%s</g>' % (C['cyan'], ''.join('<path transform="%s" d="%s"/>' % (tf, d) for d in WORDMARK))
+
+
+def brand_mark(card, x, y, size):
+    """The DEFADE mark (src/mark.svg, the site's brand/mark.svg as it is),
+    size tall with its top-left corner at (x, y)."""
+    import re
+    with open(os.path.join(ROOT, 'src', 'mark.svg')) as f:
+        svg = f.read()
+    vx, vy, vw, vh = [float(v) for v in re.search(r'viewBox="([^"]+)"', svg).group(1).split()]
+    inner = svg[svg.index('>') + 1:svg.rindex('</svg>')]
+    defs = re.search(r'<defs>(.*)</defs>', inner, re.S)
+    if defs:
+        card.defs.append(defs.group(1).strip())
+        inner = inner.replace(defs.group(0), '')
+    k = size / vh
+    return '<g transform="matrix(%s 0 0 %s %s %s)">%s</g>' % (_n(k), _n(k), _n(x - vx * k), _n(y - vy * k), inner.strip())
 
 
 def hero(dfi):
@@ -382,8 +393,15 @@ def hero(dfi):
                 'See through the token. A scan reads a token and lands on a rug pull probability.')
     frame(card)
 
-    # Left: the name under the scan line, the headline, the line.
-    wordmark(card, 32, 108, 330, 'h')
+    # Left: the logo as the brand's horizontal lockup sets it
+    # (brand/lockup-horizontal.svg: the mark 1.85 times the lettering's
+    # height, 33 units before it, centred on it), the headline and the line.
+    mark_h, gap = 72, 72 * 33 / 102.39
+    cap = mark_h * 55.42 / 102.39
+    lw = cap * WORDMARK_BOX[2] / WORDMARK_BOX[3]
+    top = 30
+    card.add(brand_mark(card, 32, top, mark_h))
+    card.add(wordmark(card, 32 + mark_h + gap, top + mark_h / 2 + cap / 2, lw))
     card.add(card.spans(32, 152, [('SEE THROUGH THE ', C['text'], None), ('TOKEN.', C['cyan'], None)], 'display', 36, ls=0.2))
     card.add(card.text(32, 186, 'Paste any token. Get its rug pull probability,', 'sans', 14, C['dim']))
     card.add(card.text(32, 205, 'and every wallet, funder and transaction', 'sans', 14, C['dim']))
@@ -630,10 +648,10 @@ def chains():
     card.add(card.text(24, 90, 'The chain and the launchpad are read from', 'sans', 12, C['faint']))
     card.add(card.text(24, 106, 'the address. Nothing to pick.', 'sans', 12, C['faint']))
     for i, (key, name, pads) in enumerate(CHAINS):
-        y = 122 + i * 43
-        card.add('<rect x="16" y="%d" width="%d" height="39" fill="%s" fill-opacity="%s"/>' % (y, HALF - 32, C['bone'], '.05' if i % 2 == 0 else '0'))
-        card.add(chain_mark(key, 26, y + 8, 22, 'c%d' % i))
-        card.add(card.text(58, y + 18, name.upper(), 'display', 16, C['text'], ls=0.3))
+        y = 122 + i * 39
+        card.add('<rect x="16" y="%d" width="%d" height="35" fill="%s" fill-opacity="%s"/>' % (y, HALF - 32, C['bone'], '.05' if i % 2 == 0 else '0'))
+        card.add(chain_mark(key, 26, y + 6, 22, 'c%d' % i))
+        card.add(card.text(58, y + 16, name.upper(), 'display', 16, C['text'], ls=0.3))
         shown, more = [], 0
         for p in pads:
             if measure(' · '.join(shown + [p]) + ' +9', 'mono', 10) > 228 and shown:
@@ -641,9 +659,9 @@ def chains():
                 break
             shown.append(p)
         line = ' · '.join(shown) + (' +%d' % more if more else '')
-        card.add(card.text(58, y + 32, line, 'mono', 10, C['dim']))
-        card.add(card.text(HALF - 26, y + 19, '%d' % len(pads), 'display', 18, C['cyan'], 'end'))
-        card.add(card.text(HALF - 26, y + 32, 'launchpad' + ('s' if len(pads) != 1 else ''), 'mono', 9, C['faint'], 'end'))
+        card.add(card.text(58, y + 29, line, 'mono', 10, C['dim']))
+        card.add(card.text(HALF - 26, y + 17, '%d' % len(pads), 'display', 18, C['cyan'], 'end'))
+        card.add(card.text(HALF - 26, y + 29, 'launchpad' + ('s' if len(pads) != 1 else ''), 'mono', 9, C['faint'], 'end'))
     card.save('chains.svg')
 
 
@@ -726,7 +744,7 @@ def launchpads():
 # The launch tools Bundle Detection names, as the Module Guide describes them
 # (defade.org/modules#launch-tools): the chains each is read on, the mark only
 # its own launches leave, and what it does to the score. Proxima and Sumo are
-# a critical flag on their own; uxento, J7 and RapidLaunch are deployers first,
+# a critical flag on their own; uxento, J7, RapidLaunch and Rugpad are deployers first,
 # scored only beside a bundle bought in the launch block.
 LAUNCH_TOOLS = [
     ('proxima', 'Proxima', 'Solana',
@@ -739,13 +757,15 @@ LAUNCH_TOOLS = [
      'The token\'s metadata on J7\'s own servers. On Robinhood, a launch sent through J7\'s own launch router.', False),
     ('rapidlaunch', 'RapidLaunch', 'Solana · Ethereum · Base · BSC · Robinhood',
      'The token\'s metadata on RapidLaunch\'s own servers, or a launch made through its own launch contracts.', False),
+    ('rugpad', 'Rugpad', 'Solana',
+     'The token\'s metadata on the launcher\'s own IPFS gateway, naming rugpad.local as where it was made. No site sells it.', False),
 ]
 
 
 def launch_tools():
     pad, row_h, top = 28, 62, 128
     card = Card(FULL, top + row_h * len(LAUNCH_TOOLS) + 62, 'Launch tools DEFADE names',
-                'Proxima, Sumo, uxento, J7 and RapidLaunch: the launch tools a DEFADE scan names, each off a mark only its own launches leave.')
+                'Proxima, Sumo, uxento, J7, RapidLaunch and Rugpad: the launch tools a DEFADE scan names, each off a mark only its own launches leave.')
     frame(card)
     card.add(label(card, pad, 38, 'LAUNCH TOOLS', 'NAMED ON PROOF · EVERY CHAIN'))
     card.add(heading(card, pad, 70, 'Launched with a bundler? The scan says which one.', 25))
@@ -850,14 +870,14 @@ def memory(dfi):
 # --------------------------------------------------------------- modules ---
 
 QUESTIONS = [
-    ('whale', 'Who holds it?', ['Holder Distribution', 'Whale Alert', 'Top Holder History', 'Bubble Map', 'Holder Overlap', 'Wallet Overlap', 'Notable Holders']),
+    ('whale', 'Who holds it?', ['Holder Distribution', 'Whale Alert', 'Top Holder History', 'Bubble Map', 'Connections', 'Holder Overlap', 'Wallet Overlap', 'Notable Holders']),
     ('bundle', 'How did it launch?', ['Bundle Detection', 'Historical Bundles', 'Token Snipers', 'Fee Fingerprint', 'Terminal']),
     ('freshwallet', 'Who is behind the wallets?', ['Fresh Wallets', 'Funding Origin', 'Sybil Bands', 'Holder Network', 'Cross-Funding Graph', 'Copy Trading', 'Signal Fusion', 'Wallet Reputation']),
-    ('devtracker', 'What did the dev do?', ['Dev Wallet', 'Deployer Reputation', 'Exit Playbook', 'Wallet Profiler', 'Token Lifecycle']),
+    ('devtracker', 'What did the dev do?', ['Dev Wallet', 'Deployer Reputation', 'Launch Operator', 'Exit Playbook', 'Wallet Profiler', 'Token Lifecycle']),
     ('exitliq', 'Can you get out?', ['Liquidity', 'Exit Liquidity', 'Insider Profit Pressure', 'Position Stress Test', 'Contract Safety']),
     ('smarttracker', 'What is the market saying?', ['Smart Money', 'Smart Money Signals', 'Social Sentiment']),
 ]
-# 33 chips, and Rug Pull Probability drawn as the verdict under them: the 34
+# 35 chips, and Rug Pull Probability drawn as the verdict under them: the 36
 # modules on defade.org/modules.
 
 
@@ -886,9 +906,9 @@ def modules(dfi):
     top = 96
     verdict_y = top + sum(heights) + gap * (len(heights) - 1) + 42
     card = Card(FULL, verdict_y + 72, 'What a DEFADE scan reads',
-                '34 modules grouped by the six questions they answer, adding up to one rug pull probability from 0 to 100.')
+                '36 modules grouped by the six questions they answer, adding up to one rug pull probability from 0 to 100.')
     frame(card)
-    card.add(label(card, pad, 38, 'WHAT A SCAN READS', '34 MODULES · SIX QUESTIONS'))
+    card.add(label(card, pad, 38, 'WHAT A SCAN READS', '36 MODULES · SIX QUESTIONS'))
     card.add(heading(card, pad, 72, 'The rug is not in the contract. It is in the wallets.', 25))
     y = top
     for r, h in enumerate(heights):
